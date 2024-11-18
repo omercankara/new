@@ -1,0 +1,424 @@
+<template>
+    <ion-page>
+        <Header />
+        <PageHeader title="Ödeme">
+            <template #start-action>
+                <ion-button class="back-button" @click="handleGoToBack()">
+                    <ion-icon slot="icon-only" :icon="chevronBackOutline" />
+                </ion-button>
+            </template>
+        </PageHeader>
+        <ion-content class="ion-padding">
+            <ion-grid>
+                <ion-row
+                    style="background-color: white; display: flex; justify-content: flex-start; margin-bottom:20px;">
+
+                    <ion-col style=" margin-bottom: 20px" size="4" v-for="i in selectedPlan"
+                        :key="i">
+                        <ion-row>
+                            <ion-col size="12">
+                                <p style="margin:0px; font-weight:bold; font-size:12px;">{{ i.title }}</p>
+                            </ion-col>
+                            <ion-col size="12">
+                                <p
+                                    style="margin:0px; padding:10px; border-radius:5px; width: 100px; background-color: #f5f5f5;">
+                                    {{ i.selectedPeriod.period_name }}</p>
+                            </ion-col>
+                        </ion-row>
+                    </ion-col>
+
+
+
+                    <ion-col size="4" style="border-radius: 1vh; margin-top :4px; padding:0px; margin-bottom: 10px;   ">
+                        <ion-row>
+                            <ion-col style="height: 20px;" size="12">
+                                <p style="color: black; margin: 0px;  font-weight:bold; font-size:12px;">Ödenecek Tutar </p>
+                            </ion-col>
+                            <ion-col style="height: 20px;" size="12">
+                                <p style="color: black; margin: 0px; font-size:15px;">{{ totalPrice }} ₺</p>
+                            </ion-col>
+                        </ion-row>
+                    </ion-col>
+
+
+                    <!-- <ion-col size="12" style="background-color: #f5f5f5;">
+                        <ion-label>Vitrin dopingi</ion-label>
+                    </ion-col>
+
+                    <ion-col size="4"
+                        style="background-color: gainsboro; border-radius: 1vh; margin-bottom: 10px; height: 50px">
+                        <ion-label>1 Hafta</ion-label>
+                    </ion-col> -->
+
+                </ion-row>
+
+                <!-- <ion-row style=" margin: 0px; padding: 0px; height: 50px;   ">
+                  
+                </ion-row> -->
+
+                <ion-row>
+                    <ion-col size="12" style="background-color: #f5f5f5; margin-bottom: 10px;">
+                        <ion-label>Kart üzerindeki ad soyad</ion-label>
+                        <ion-input v-model="formData.cardHolder" type="text" placeholder="Örn: Ömercan KARA" class="form-control "
+                            style="background-color: white;" </ion-input>
+                    </ion-col>
+
+                    <ion-col size="12" style="background-color: #f5f5f5; margin-bottom: 10px;">
+                        <ion-label>Kart numaranız</ion-label>
+                        <ion-input  v-model="formData.cardNumber" type="text" placeholder="Örn: 5870 0000 0000 0000" class="form-control "
+                            style="background-color: white;" </ion-input>
+                    </ion-col>
+
+                    <ion-col size="4" style="background-color: #f5f5f5; margin-bottom: 10px;">
+                        <ion-label>Ay</ion-label>
+                        <ion-list>
+                            <ion-item>
+                                <ion-select v-model="formData.expiryMonth" placeholder="Ay">
+                                    <ion-select-option  v-for="i in MonthData" :value="i.id" :key="i.id">{{ i.name
+                                        }}</ion-select-option>
+                                </ion-select>
+                            </ion-item>
+                        </ion-list>
+                    </ion-col>
+
+                    <ion-col size="4" style="background-color: #f5f5f5; margin-bottom: 10px;">
+                        <ion-label>Yıl</ion-label>
+                        <ion-list>
+                            <ion-item>
+                                <ion-select v-model="formData.expiryYear" placeholder="Yıl">
+                                    <ion-select-option v-for="i in YearData" :value="i">{{ i }}</ion-select-option>
+                                </ion-select>
+                            </ion-item>
+                        </ion-list>
+                    </ion-col>
+
+
+                    <ion-col size="4" style="background-color: #f5f5f5; margin-bottom: 10px;">
+                        <ion-label>CVV</ion-label>
+                        <ion-input v-model="formData.cvv" @input="validateCVV" type="text" placeholder="Örn: 523"
+                            class="form-control" style="background-color: white;" inputmode="numeric"></ion-input>
+                    </ion-col>
+
+                    <ion-col size="12">
+                        <PageHeader title="Fatura Bilgisi" style="margin-bottom: 10px"></PageHeader>
+                    
+                        <ion-row>
+                            <ion-col size="12" style=" width: 100%; display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-start;">
+                                <ion-checkbox></ion-checkbox>
+                                <ion-label style="margin-left: 8px;">Fatura bilgisi istiyorum</ion-label>
+                            </ion-col>
+
+                            <ion-col size="12" style=" width: 100%; background-color: white; display: flex; margin-bottom: 10px; flex-direction: column; align-items: flex-start; justify-content: flex-start;">
+                                
+                                <ion-label style="background-color: white;" >Şirket adı</ion-label>
+                                <ion-input v-model="formData.companyName" placeholder="First dijital reklam ajansı"style="background-color: #f3f2f7;"></ion-input>
+                            </ion-col>
+
+                            <ion-col size="12" style=" width: 100%; background-color: white; display: flex; margin-bottom: 10px; flex-direction: column; align-items: flex-start; justify-content: flex-start;">
+                                
+                                <ion-label style="background-color: white;" >Vergi Dairesi</ion-label>
+                                <ion-input v-model="formData.taxOffice" placeholder="zeyneptektas@gmail.com"style="background-color: #f3f2f7;"></ion-input>
+                            </ion-col>
+
+                            <ion-col size="12" style=" width: 100%; background-color: white; display: flex; margin-bottom: 10px; flex-direction: column; align-items: flex-start; justify-content: flex-start;">
+                                
+                                <ion-label style="background-color: white;" >Vergi numarası</ion-label>
+                                <ion-input v-model="formData.taxNumber" placeholder="First dijital reklam ajansı"style="background-color: #f3f2f7;"></ion-input>
+                            </ion-col>
+
+                            <ion-col size="12" style=" width: 100%; background-color: white; display: flex; margin-bottom: 10px; flex-direction: column; align-items: flex-start; justify-content: flex-start;">
+                                
+                                <ion-label style="background-color: white;" >Şirket adresi</ion-label>
+                                <ion-input v-model="formData.companyAddress" placeholder="0500 000 0000"style="background-color: #f3f2f7;"></ion-input>
+                            </ion-col>
+
+                            <ion-col size="12" style=" width: 100%; background-color: white; display: flex; margin-bottom: 10px; flex-direction: column; align-items: flex-start; justify-content: flex-start;">
+                                
+                                <ion-label style="background-color: white;" >Telefon Numarası</ion-label>
+                                <ion-input v-model="formData.phone" placeholder="0500 000 0000" style="background-color: #f3f2f7;"></ion-input>
+                            </ion-col>
+                        </ion-row>
+                    </ion-col>
+                    
+                    <ion-col size="12">
+                        <ion-button expand="block" @click="payment">Ödemeyi Gerçekleştir</ion-button>
+                    </ion-col>
+                </ion-row>
+            </ion-grid>
+        </ion-content>
+    </ion-page>
+</template>
+
+<script lang="ts" setup>
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from "vue-router";
+import { IonButton, IonContent, IonIcon, IonGrid, IonSelectOption, IonSelect, IonItem, IonList, IonInput, IonCol, IonPage, IonRow, IonLabel } from '@ionic/vue';
+import { chevronBackOutline, constructOutline } from 'ionicons/icons';
+
+
+import Swal from 'sweetalert2'
+
+import paymentApi from "@/services/payment"
+
+import 'sweetalert2/src/sweetalert2.scss'
+import { useDopingStore } from "@/stores/dopingStore";
+const dopingStore = useDopingStore();
+
+import { Swiper, SwiperSlide } from 'swiper/vue';
+
+// Components
+import Header from "@/components/Header.vue";
+import PageHeader from "@/components/page/PageHeader.vue";
+import dopingApi from '@/services/dopingApi';
+
+// Other
+const router = useRouter();
+const route = useRoute();
+
+
+
+
+
+
+// Data
+const productCode = ref<string>((route?.params?.code as string) ?? '');
+
+const YearData = ref<any[]>([]);
+for (let year = 2000; year <= 2050; year++) {
+    YearData.value.push(year);
+}
+const MonthData = ref<{ id: number; name: string }[]>([
+    { id: 1, name: 'Ocak' },
+    { id: 2, name: 'Şubat' },
+    { id: 3, name: 'Mart' },
+    { id: 4, name: 'Nisan' },
+    { id: 5, name: 'Mayıs' },
+    { id: 6, name: 'Haziran' },
+    { id: 7, name: 'Temmuz' },
+    { id: 8, name: 'Ağustos' },
+    { id: 9, name: 'Eylül' },
+    { id: 10, name: 'Ekim' },
+    { id: 11, name: 'Kasım' },
+    { id: 12, name: 'Aralık' }
+]);
+
+
+const formData = ref({
+            cardHolder: '',
+            cardNumber: '',
+            expiryMonth: null,
+            expiryYear: null,
+            cvv: '',
+            requestInvoice: true,
+            companyName: '',
+            taxOffice: '',
+            taxNumber: '',
+            companyAddress: '',
+            phone: ''
+        });
+
+
+const selectedPlan = ref<any[]>([]);
+
+// LocalStorage'den 'selected-dopings' verisini çekiyoruz
+const loadPlanFromLocalStorage = () => {
+    const storedData = localStorage.getItem('selected-dopings');
+
+    if (storedData) {
+        // JSON formatında veriyi alıyoruz
+        const jsonData = JSON.parse(storedData);
+        console.log(jsonData),
+
+
+            // `selectedPlan`'e JSON verisini atıyoruz
+            selectedPlan.value = jsonData;
+
+    }
+}
+
+
+const totalPrice = computed(() => {
+    return selectedPlan.value.reduce((total: any, i: { selectedPeriod: { price: any; }; }) => {
+        return total + (i.selectedPeriod.price || 0);
+    }, 0);
+});
+
+
+const cvv = ref('');
+const validateCVV = (event: { target: { value: any; }; }) => {
+    let value = event.target.value;
+    // Yalnızca rakamları tutmak için regex kullanın
+    value = value.replace(/\D/g, ''); // \D: rakam olmayan karakterleri kaldırır
+    // Maksimum 3 rakam kontrolü
+    if (value.length > 3) {
+        value = value.slice(0, 3);
+    }
+    cvv.value = value;
+};
+
+
+watch(() => route.fullPath, (newPath) => {
+    // Sadece /doping/payment yolunda olduğunda işlem yap
+    if (newPath.startsWith('/doping/payment')) {
+        loadPlanFromLocalStorage()
+    }
+}, { immediate: true }); // immediate: true ile bileşen yüklendiğinde de tetiklenir
+
+
+
+
+interface ProductDoping {
+    forEach(arg0: (element: any) => void): unknown;
+    price: number; // veya uygun bir tip
+    doping_code: string; // veya uygun bir tip
+    time:number
+}
+const payment = () => {
+    let doping = {
+        order_code: 234234,
+        dopings: [] as ProductDoping[], // items dizisi ProductDoping türünde
+    };
+
+    
+
+    // let item: ProductDoping = dopingStore.createdProductDoping;
+    let item = dopingStore.selectedDopings;
+    
+
+    item.forEach((element: any) => {
+        let dp = element.selectedPeriod;
+        dp.doping_code = element.doping_code
+        doping.dopings.push(dp);
+    });
+    
+
+    // Eğer item tanımlıysa ekle
+    
+
+    // Product doping API çağrısı
+    dopingApi.createProductDopings(doping).then((res: any) => {
+        console.log(res);
+    }).catch((error: any) => {
+        console.error("Doping oluşturma hatası:", error);
+    });
+
+    // Ödeme API çağrısı
+    paymentApi.payment(formData.value).then((res: any) => {
+        console.log(res);
+    }).catch((error: any) => {
+        console.error("Ödeme hatası:", error);
+    });
+
+    Swal.fire({
+        title: "Ödeme Başarıyla Sağlandı",
+        heightAuto: false,
+        icon: "success"
+    }).then(() => {
+        //router.push({ name: 'home' });
+    });
+};
+
+
+
+// Function
+const handleGoToBack = () => {
+    router.push({ name: 'doping-select-plan', params: { code: productCode.value } });
+}
+
+onMounted(() => {
+
+
+})
+</script>
+
+<style lang="scss" scoped>
+ion-button.back-button {
+    --background: transparent;
+    --background-hover: red;
+    --box-shadow: none;
+    --border-width: 0px;
+
+    ion-icon {
+        color: var(--primary);
+    }
+}
+
+
+ion-button {
+    text-transform: none;
+    --padding-start: 20px;
+    --padding-end: 20px;
+    font-size: 14px;
+}
+
+ion-searchbar {
+    padding-left: 10px;
+    padding-right: 10px;
+    --border-radius: 20px;
+    --box-shadow: none;
+    --background: var(--primary-gray);
+}
+
+ion-card {
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    padding: 20px 20px 20px 20px;
+    background: var(--primary-gray);
+    border-radius: var(--border-radius-large);
+    box-shadow: none;
+    gap: 20px;
+    align-items: center;
+
+    .card-left {
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: var(--border-radius-large);
+        }
+
+        ion-skeleton-text.image {
+            width: 100%;
+            height: 140px;
+            border-radius: var(--border-radius-large);
+        }
+    }
+
+    .card-right {
+        ion-card-title {
+            font-size: 15px;
+            margin-bottom: 5px;
+        }
+
+        ion-skeleton-text {
+            border-radius: var(--border-radius);
+            height: 20px;
+            margin-bottom: 5px;
+
+            &:nth-child(1) {
+                width: 60%;
+            }
+
+            &:nth-child(2) {
+                width: 50%;
+            }
+
+            &:nth-child(3) {
+                width: 50%;
+            }
+
+            &:nth-child(5) {
+                border-radius: 20px;
+                width: 100px;
+                height: 30px;
+            }
+        }
+
+        .card-action {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    }
+}
+</style>

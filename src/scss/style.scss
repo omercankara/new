@@ -1,0 +1,56 @@
+@import "fonts";
+@import "variables";
+@import "helpers";
+
+// Ionic
+@import '@ionic/vue/css/core.css';
+
+/* Basic CSS */
+@import '@ionic/vue/css/normalize.css';
+@import '@ionic/vue/css/structure.css';
+@import '@ionic/vue/css/typography.css';
+
+/* Optional CSS  */
+@import '@ionic/vue/css/padding.css';
+@import '@ionic/vue/css/float-elements.css';
+@import '@ionic/vue/css/text-alignment.css';
+@import '@ionic/vue/css/text-transformation.css';
+@import '@ionic/vue/css/flex-utils.css';
+@import '@ionic/vue/css/display.css';
+
+.text-divider {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+
+    &::before, &::after {
+        content: '';
+        height: 1px;
+        background-color: var(--primary-border);
+        flex-grow: 1;
+    }
+
+    &::before {
+        margin-right: 20px
+    }
+
+    &::after {
+        margin-left: 20px
+    }
+}
+
+ion-button {
+    text-transform: none;
+    ion-spinner {
+        --color: var(--white);
+    }
+}
+
+.products-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    &.list{
+        grid-template-columns: 1fr;
+    }
+}

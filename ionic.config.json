@@ -1,0 +1,7 @@
+{
+  "name": "takasimo",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}

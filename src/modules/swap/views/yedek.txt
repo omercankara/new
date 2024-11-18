@@ -1,0 +1,1370 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, reactive, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+
+import io from 'socket.io-client';
+
+import { closeOutline } from 'ionicons/icons';
+
+import { useToast } from 'vue-toast-notification';
+import 'vue-toast-notification/dist/theme-sugar.css';
+const $toast = useToast();
+
+
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import { Navigation, Pagination, Scrollbar } from 'swiper/modules';
+
+const isFirstModalOpen = ref(false);
+const firstModal = ref<HTMLIonModalElement | null>(null);
+
+const isSecondModalOpen = ref(false);
+const secondModal = ref<HTMLIonModalElement | null>(null);
+
+
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import 'swiper/css/scrollbar';
+import '@ionic/vue/css/ionic-swiper.css';
+
+import { IonButton, IonContent, IonCheckbox, IonCardHeader, IonCardTitle, IonCardSubtitle, IonModal, IonLabel, IonGrid, IonInput, IonCard, IonCardContent, IonRow, IonCol, IonTextarea, IonRadioGroup, IonRadio, IonIcon, IonItem, IonPage } from '@ionic/vue';
+import { chevronBackOutline } from 'ionicons/icons';
+import Header from '@/components/Header.vue';
+import PageHeader from '@/components/page/PageHeader.vue';
+import productApi from '@/services/productApi';
+import { useSwapStore } from '@/stores/swapStore';
+import authApi from '@/services/authApi';
+import messageApi from '@/services/messageApi';
+import { FetchMessageList } from '@/helpers/messageCount';
+const modules = [Navigation, Pagination, Scrollbar]
+const store = useSwapStore();
+const router = useRouter();
+const route = useRoute();
+const swap = computed(() => store.swap);
+const targetSwapProduct = computed(() => store.targetSwap);
+const meProduct = ref<any[]>([]);
+const meMoreProduct = ref<any[]>([]);
+const targetProduct = ref<any[]>([]);
+const targetMoreProduct = ref<any[]>([]);
+let target_userCode = ''
+
+let socket = null
+let roomId = ref<string>('f91eab6e-db30-4ccc-a9dc-4e36eb288de7');
+const isTextModalOpen = ref(false);
+
+
+const selected = ref<'offer' | 'request' | null>('offer');
+
+// Method to update the selected button
+function selectButton(type: 'offer' | 'request') {
+    selected.value = type;
+    console.log(type)
+    formData.value.latest_offer.offer_type = type
+}
+
+
+
+const onTextModalDismiss = () => {
+    isTextModalOpen.value = false
+}
+
+const showText = () => {
+    isTextModalOpen.value = true;
+    console.log("text")
+}
+
+const formData = ref<any>({
+    _to: "",
+    latest_offer: {
+        swapStatus: true,
+        offerStatus: true,
+        readStatus: false,
+        offer_type: "request",
+        price: "",
+        currency: "TRY",
+        message: "",
+        productMessage: "",
+        from: [],
+        to: [],
+        meOwnerInfo: {},
+        targetOwnerInfo: {}
+    },
+    from: false,
+    to_is_deleted: false
+})
+
+
+
+const testing = reactive({
+    meProductCode: ref<any[]>([]),
+    targetProductCode: ref<string | boolean>("e9390693-e827-4e8a-8cf5-6d7cd2c6c6c1"),
+});
+
+const targetUserInfo = ref({
+    name: '',
+    // last_name: '',
+    phone: '',
+});
+
+const meUserInfo = ref({
+    name: '',
+    // last_name: '',
+    phone: '',
+});
+
+
+const sendOffer = async () => {
+    if (isChecked.value === false) {
+        $toast.error("Lütfen İlan verme kurallarını onaylayınız", {
+            position: "top-right",
+        });
+    } else {
+        try {
+            // Mesaj gönderme işlemi
+            const response = await messageApi.sendMessage(formData.value);
+            console.log(response.data);
+
+            // Başarılı işlem sonrası toast bildirimi
+            $toast.success('Teklif iletildi!', {
+                position: 'top',
+            }); // Başarıyla tamamlandığında gösterilecek bildirim
+            setTimeout(() => {
+                router.push({ name: 'messages' });
+            })
+        } catch (error) {
+            // Hata durumunda toast bildirimi
+            $toast.error('Teklif iletilirken bir hata oluştu.'); // Hata bildirimi
+            console.error('Bir hata oluştu:', error);
+        }
+    }
+
+
+
+};
+
+
+
+
+const handleGoToBack = () => {
+    router.push({ name: 'home' });
+};
+
+const openFirstModal = () => {
+    isFirstModalOpen.value = true;
+    //Checkboxu seçtirme işlemi
+    setTimeout(() => {
+        meProduct.value.forEach((element: any) => {
+            console.log("e", element.product_code);
+
+
+            // Checkbox'ı benzersiz bir şekilde hedefle
+            const targetElement = document.querySelector(`ion-checkbox[data-product-code="${element.product_code}"]`) as HTMLInputElement;
+
+            if (targetElement) {
+                // Programatik olarak checkbox'ı işaretleyin
+                targetElement.checked = true;
+
+                // Event tetikleme
+                const customEvent = new CustomEvent('ionChange', {
+                    detail: {
+                        checked: true,
+                        item: element
+                    }
+                });
+
+                // Event'i checkbox'a gönderin
+                targetElement.dispatchEvent(customEvent);
+
+                // Ayrıca MeHandleCheckboxChange fonksiyonunu çağırabilirsiniz
+                handleCheckboxChange(customEvent, element)
+                console.log("target", targetElement)
+            }
+        });
+    }, 100)
+};
+
+const openSecondModal = () => {
+    isSecondModalOpen.value = true;
+    setTimeout(() => {
+        targetProduct.value.forEach((element: any) => {
+            console.log("e", element.product_code);
+
+            // Checkbox'ı benzersiz bir şekilde hedefle
+            const targetElement = document.querySelector(`ion-checkbox[data-product-code="${element.product_code}"]`) as HTMLInputElement;
+
+            if (targetElement) {
+                // Programatik olarak checkbox'ı işaretleyin
+                targetElement.checked = true;
+
+                // Event tetikleme
+                const customEvent = new CustomEvent('ionChange', {
+                    detail: {
+                        checked: true,
+                        item: element
+                    }
+                });
+
+                // Event'i checkbox'a gönderin
+                targetElement.dispatchEvent(customEvent);
+
+                addToTargetSwap(customEvent, element)
+
+                console.log("target", targetElement)
+            }
+        });
+    }, 100)
+};
+
+const isChecked = ref(false);
+function onCheckboxChange(event: any) {
+    isChecked.value = event.detail.checked;
+    console.log('isChecked:', isChecked.value);
+}
+
+const onFirstModalDismiss = () => {
+    isFirstModalOpen.value = false;
+};
+
+const openSecondModalDismiss = () => {
+    isSecondModalOpen.value = false;
+}
+
+const closeFirstModal = () => {
+    isFirstModalOpen.value = false;
+};
+
+const closeSecondModal = () => {
+    isSecondModalOpen.value = false;
+}
+
+//Karşıdaki kullanıcının ve kullanıcının kendi ilk ürünleri için productCode ayarlamalarını yap
+const productCodeSettings = () => {
+    testing.meProductCode = []
+    swap.value.forEach((element: any) => {
+        testing.meProductCode.push(element.product_code)
+        //  console.log(element)
+    })
+
+    targetSwapProduct.value.forEach((element: any) => {
+        testing.targetProductCode = element.product_code
+        formData.value._to = element.user_code
+        // console.log(formData.value._to)
+        //  console.log(element)
+    })
+}
+
+//Kullanıcıların Ürünlerini ve bilgilerini çek
+const fetchProducts = async () => {
+    formData.value.latest_offer.from = [];
+    formData.value.latest_offer.to = [];
+    meProduct.value = [];
+    targetProduct.value = [];
+    try {
+        const response = await productApi.getMeSingleProduct(testing);
+        //İlana gönderenin bilgilerini alıyorum
+        formData.value.latest_offer.meOwnerInfo = response.meProducts[0].data.owner
+        formData.value.latest_offer.targetOwnerInfo = response.targetProduct.data.owner
+
+        let meİtem = response.meProducts
+        let targetİtem = response.targetProduct
+        //console.log(targetİtem)
+        meİtem.forEach((element: any) => {
+            meProduct.value.push(element.data);
+            console.log("hey",element)
+          
+
+            //Burada formDataya sayfa ilk açıldıgında ilk takaslık ürünleri ekliyorum
+            const newItem = {
+                product_code: element.data.product_code, // Product code bilgisini ekle
+                name: element.data.name, // Name bilgisini ekle
+                image: element.data.showcase_image
+            };
+
+            // formData'daki product_code'ları kontrol et
+            const exists = formData.value.latest_offer.from.some((item: any) => item.product_code === newItem.product_code);
+            if (!exists) {
+                // Eğer product_code dizide yoksa ekle
+                formData.value.latest_offer.from.push(newItem);
+                // console.log(formData.value.latest_offer.from);
+
+            } else {
+                console.log('Zaten mevcut:', newItem);
+            }
+        })
+
+
+        const newItem = {
+            product_code: targetİtem.data.product_code, // Product code bilgisini ekle
+            name: targetİtem.data.name, // Name bilgisini ekle
+            image: targetİtem.data.showcase_image
+        };
+
+        // formData'daki product_code'ları kontrol et
+        const exists = formData.value.latest_offer.from.some((item: any) => item.product_code === newItem.product_code);
+        if (!exists) {
+            // Eğer product_code dizide yoksa ekle
+            formData.value.latest_offer.to.push(newItem);
+            console.log(formData.value.latest_offer.to);
+
+        } else {
+            console.log('Zaten mevcut:', newItem);
+        }
+
+        target_userCode = targetİtem.data.owner.user_code;
+        meUserInfo.value.name = meİtem[0].data.owner.name
+        // meUserInfo.value.last_name = meİtem[0].data.owner.last_name
+        meUserInfo.value.phone = meİtem[0].data.owner.phone
+        targetUserInfo.value.name = targetİtem.data.owner.name
+        // targetUserInfo.value.last_name = targetİtem.data.owner.last_name
+        targetUserInfo.value.phone = targetİtem.data.owner.phone
+        targetProduct.value.push(response.targetProduct.data)
+        await fetchMeMoreMyProducts();
+
+    } catch (error) {
+        console.error('Failed to fetch product:', error);
+    }
+    console.log(formData.value)
+
+};
+
+
+const fetchMeMoreMyProducts = async () => {
+    try {
+        const res = await authApi.meProducts();
+        let item = res.data.products;
+
+
+
+        if (item && Array.isArray(item)) {
+            meMoreProduct.value = item.slice(0, 100).map((element: any) => element.product);
+        } else {
+            meMoreProduct.value = []; // Veri yoksa boş bir dizi ile başla
+        }
+    } catch (error) {
+        console.error('Ürünler alınırken bir hata oluştu:', error);
+        meMoreProduct.value = []; // Hata durumunda boş bir dizi ile başla
+    }
+
+    targetMoreProduct.value = [];
+    try {
+        const res = await productApi.getOwnerProducts(target_userCode).then(res => {
+            let item = res.data.data
+
+            item.forEach((element: any) => {
+                targetMoreProduct.value.push(element.product)
+            })
+        })
+    } catch (err) {
+
+    }
+}
+const handleCheckboxChange = (event: CustomEvent, item: any): void => {
+    console.log(item);
+
+    if (Array.isArray(formData.value.latest_offer.from)) {
+        // `item`'in `product_code` değerini kontrol et
+        const itemProductCode = item.product_code;
+
+        // formData'daki product_code'ları kontrol et
+        const exists = formData.value.latest_offer.from.some((existingItem: any) => existingItem.product_code === itemProductCode);
+
+        if (!exists) {
+            // Yeni bir nesne oluştur ve sadece gerekli bilgileri ekle
+            const newItem = {
+                product_code: item.product_code,
+                name: item.name,
+                image: item.showcase_image
+            };
+
+            // formData'ya yeni ürünü ekle
+            formData.value.latest_offer.from.push(newItem);
+            console.log('Yeni ürün eklendi:', newItem);
+            console.log('Güncellenmiş formData:', formData.value.latest_offer.from);
+        } else {
+            console.log('form İçinde mevcut Olan Ürün:', item);
+        }
+    } else {
+        console.error('formData.value.latest_offer.from dizisi değil');
+    }
+
+    const isChecked = (event.detail as { checked: boolean }).checked;
+
+    if (isChecked) {
+        // Eğer `item` daha önce `meProduct` dizisinde yoksa ekle
+        if (!meProduct.value.some(existingItem => existingItem.product_code === item.product_code)) {
+            meProduct.value.push(item);
+            $toast.success('Ürün Takasa eklendi', { position: 'top' });
+        } else {
+            // Eğer ürün zaten takasta ise kullanıcıya bilgi ver
+            //$toast.info('Bu ürün zaten takasta', { position: 'top-right' });
+        }
+    } else {
+        // Ürün checkbox'ı işaretlenmemişse ve `meProduct` dizisinde varsa, çıkar
+        if (meProduct.value.some(existingItem => existingItem.product_code === item.product_code)) {
+
+            if (formData.value.latest_offer.from.length > 1) {
+                meProduct.value = meProduct.value.filter((element: any) => element.product_code !== item.product_code);
+
+                // Aynı ürün `formData`'dan çıkar
+                formData.value.latest_offer.from = formData.value.latest_offer.from.filter((element: any) => element.product_code !== item.product_code);
+                console.log('Çıkarılan `formData`:', formData.value.latest_offer.from);
+                $toast.warning('Ürün Takastan Çıkartıldı', { position: 'top' });
+            } else {
+                $toast.error('En az bir ürün kalmalı, çıkarma işlemi gerçekleştirilemedi.', { position: 'top' });
+                setTimeout(() => {
+                    meProduct.value.forEach((element: any) => {
+                        console.log("e", element.product_code);
+
+
+                        // Checkbox'ı benzersiz bir şekilde hedefle
+                        const targetElement = document.querySelector(`ion-checkbox[data-product-code="${element.product_code}"]`) as HTMLInputElement;
+
+                        if (targetElement) {
+                            // Programatik olarak checkbox'ı işaretleyin
+                            targetElement.checked = true;
+
+                            // Event tetikleme
+                            const customEvent = new CustomEvent('ionChange', {
+                                detail: {
+                                    checked: true,
+                                    item: element
+                                }
+                            });
+
+                            // Event'i checkbox'a gönderin
+                            targetElement.dispatchEvent(customEvent);
+
+                            // Ayrıca MeHandleCheckboxChange fonksiyonunu çağırabilirsiniz
+                            handleCheckboxChange(customEvent, element)
+                            console.log("target", targetElement)
+                        }
+                    });
+                }, 100)
+            }
+
+        }
+    }
+};
+
+;
+
+const addToTargetSwap = (event: CustomEvent, item: any): void => {
+    console.log(item);
+    if (Array.isArray(formData.value.latest_offer.to)) {
+        // `item`'in `product_code` değerini kontrol et
+        const itemProductCode = item.product_code;
+
+        // formData'daki product_code'ları kontrol et
+        const exists = formData.value.latest_offer.to.some((existingItem: any) => existingItem.product_code === itemProductCode);
+
+        if (!exists) {
+            // Yeni bir nesne oluştur ve sadece gerekli bilgileri ekle
+            const newItem = {
+                product_code: item.product_code,
+                name: item.name,
+                image: item.showcase_image
+            };
+            formData.value.latest_offer.to.push(newItem);
+            console.log(formData.value.latest_offer);
+        } else {
+            console.log('form İçinde mevcut Olan Ürün:', item);
+        }
+    } else {
+        console.error('formData.value.latest_offer.from dizisi değil');
+    }
+
+    let isChecked = (event.detail as { checked: boolean }).checked;
+    console.log("form", formData.value.latest_offer.to)
+
+    // if (isChecked) {
+    //     // Eğer `item` daha önce `meProduct` dizisinde yoksa ekle
+    //     if (!targetProduct.value.some(existingItem => existingItem.product_code === item.product_code)) {
+    //         targetProduct.value.push(item);
+    //         $toast.success('Ürün Takasa eklendi', { position: 'top-right' });
+    //     } else {
+    //         // Eğer ürün zaten takasta ise kullanıcıya bilgi ver
+    //         //$toast.info('Bu ürün zaten takasta', { position: 'top-right' });
+    //     }
+    // } else {
+    //     // Ürün checkbox'ı işaretlenmemişse ve `meProduct` dizisinde varsa, çıkar
+    //     if (targetProduct.value.some(existingItem => existingItem.product_code === item.product_code)) {
+    //         targetProduct.value = targetProduct.value.filter((element: any) => element.product_code !== item.product_code);
+
+    //         // Aynı ürün `formData`'dan çıkar
+    //         formData.value.latest_offer.to = formData.value.latest_offer.to.filter((element: any) => element.product_code !== item.product_code);
+    //         console.log('Çıkarılan `formData`:', formData.value.latest_offer);
+    //         $toast.warning('Ürün Takastan Çıkartıldı', { position: 'top-right' });
+    //     }
+    // }
+
+    if (isChecked) {
+        // Eğer `item` daha önce `meProduct` dizisinde yoksa ekle
+        if (!targetProduct.value.some(existingItem => existingItem.product_code === item.product_code)) {
+            targetProduct.value.push(item);
+            $toast.success('Ürün Takasa eklendi', { position: 'top' });
+        } else {
+            // Eğer ürün zaten takasta ise kullanıcıya bilgi ver
+            //$toast.info('Bu ürün zaten takasta', { position: 'top-right' });
+        }
+    } else {
+        // Ürün checkbox'ı işaretlenmemişse ve `meProduct` dizisinde varsa, çıkar
+        if (targetProduct.value.some(existingItem => existingItem.product_code === item.product_code)) {
+            // `formData.value.latest_offer.to` dizisinde 1'den fazla eleman varsa, ürünü çıkar
+            if (formData.value.latest_offer.to.length > 1) {
+                targetProduct.value = targetProduct.value.filter((element: any) => element.product_code !== item.product_code);
+
+                // Aynı ürün `formData`'dan çıkar
+                formData.value.latest_offer.to = formData.value.latest_offer.to.filter((element: any) => element.product_code !== item.product_code);
+                console.log('Çıkarılan `formData`:', formData.value.latest_offer);
+                $toast.warning('Ürün Takastan Çıkartıldı', { position: 'top' });
+            } else {
+                // En az bir ürün kalmalı, çıkarma işlemi gerçekleştirilemedi.
+                $toast.error('En az bir ürün kalmalı, çıkarma işlemi gerçekleştirilemedi.', { position: 'top' });
+
+                // Checkbox'u tekrar checked yap
+                setTimeout(() => {
+                    targetProduct.value.forEach((element: any) => {
+                        console.log("e", element.product_code);
+
+                        // Checkbox'ı benzersiz bir şekilde hedefle
+                        const targetElement = document.querySelector(`ion-checkbox[data-product-code="${element.product_code}"]`) as HTMLInputElement;
+
+                        if (targetElement) {
+                            // Programatik olarak checkbox'ı işaretleyin
+                            targetElement.checked = true;
+
+                            // Event tetikleme
+                            const customEvent = new CustomEvent('ionChange', {
+                                detail: {
+                                    checked: true,
+                                    item: element
+                                }
+                            });
+
+                            // Event'i checkbox'a gönderin
+                            targetElement.dispatchEvent(customEvent);
+
+                            addToTargetSwap(customEvent, element)
+
+                            console.log("target", targetElement)
+                        }
+                    });
+                }, 100)
+            }
+        }
+    }
+
+
+}
+
+
+watch(() => route.path, (newPath) => {
+    // meProduct.value = [];
+    // targetProduct.value = [];
+    if (newPath === '/swap') {
+        productCodeSettings()
+        fetchProducts();
+        console.log("test")
+
+        // if (Array.isArray(formData.value.latest_offer.from)) {
+        //     meProduct.value.forEach((element: any) => {
+        //         // Yeni bir nesne oluştur ve sadece gerekli bilgileri ekle
+        //         const newItem = {
+        //             product_code: element.product_code, // Product code bilgisini ekle
+        //             name: element.name, // Name bilgisini ekle
+        //             image: element.showcase_image
+        //         };
+
+        //         // formData'daki product_code'ları kontrol et
+        //         const exists = formData.value.latest_offer.from.some((item: any) => item.product_code === newItem.product_code);
+        //         if (!exists) {
+        //             // Eğer product_code dizide yoksa ekle
+        //             formData.value.latest_offer.from.push(newItem);
+        //             console.log(formData.value.latest_offer.from)
+
+        //         } else {
+        //             console.log('Zaten mevcut:', newItem);
+        //         }
+        //     });
+        //     console.log('Final formData:', formData.value);
+        // } else {
+        //     console.error('formData.value.latest_offer.from dizisi değil');
+        // }
+
+        console.log(formData.value)
+    }
+});
+
+
+
+
+onMounted(() => {
+
+    socket = io('https://socket.takasimo.com');
+    console.log(socket)
+
+    console.log("xsdf", meProduct)
+
+
+    // meProduct.value = [];
+    // targetProduct.value = [];
+    productCodeSettings()
+    if (route.path === '/swap') {
+        fetchProducts();
+    }
+
+    console.log(formData.value)
+
+
+});
+</script>
+
+
+
+
+<template>
+    <ion-page>
+        <Header />
+
+        <PageHeader title="Teklif Ver" style="margin-bottom: 0px; font-weight: bold; background-color: white;">
+            <template #start-action>
+                <img style="height: 24px; margin-right: 10px; margin-top: 2px" @click="handleGoToBack()" src="@/assets/icons3.png" alt="">
+            </template>
+            <template #end-action>
+                <span style="cursor: pointer; margin-left: auto;  height: 34px; width: 34px; display: flex; align-items: center;">
+                    <img src="@/assets/x.png" alt="" style="height: 44px; width: 44px;">
+                </span>
+            </template>
+        </PageHeader>
+        
+        <PageHeader title="Teklif Bilgileri" style="margin-bottom: 10px;">
+            <template #start-action>
+                <img style="height: 17px; margin-right: 10px; margin-top: 2px" @click="handleGoToBack()" src="@/assets/back.png" alt="">
+            </template>
+        </PageHeader>
+
+        <ion-content class="content" style="background-color: blue; ">
+            <ion-grid style="margin-bottom: 10px; border-bottom:1px solid gainsboro; height: 100%" >
+
+                <ion-row class="trader-list" style=" margin-bottom: -30px">
+                    <ion-col size="6" >
+                        <p style="text-align: center; margin-right: 30px"  >{{ meUserInfo?.name }}</p>
+                    </ion-col>
+                    <ion-col size="6    "  >
+                        <p style="text-align: center; margin-left: 30px"  >{{ targetUserInfo?.name }}</p>
+                    </ion-col>
+                </ion-row>
+
+                <ion-row class="swap-container" style="padding: 0; margin: 0; display: flex; ">
+                    <ion-col  class="item-scroll" style="height: 260px;"> 
+                        <swiper :modules="modules" :slides-per-view="1" :navigation="true"
+                                :pagination="{ clickable: true }" :scrollbar="{ draggable: true }">
+                            <swiper-slide v-for="(i, index) in meProduct" :key="index">
+                                <ion-card style="padding: 8px; background-color: #EBEBED; box-shadow: none">
+                                    <img style="border-radius: 10px; height: 90px" :src="'https://takasimos3.s3.eu-north-1.amazonaws.com' + i.showcase_image" />
+                                    <ion-card-content style="padding: 5px">
+                                        <p style="font-weight: bold; color: black; margin: 0;">{{ i.name }}</p>
+                                        <p style="font-size: 10px; margin: 0;">{{ i.city.name }} / {{ i.district.name }}</p>
+                                        <p style="font-weight: bold; color: black; margin: 0;">{{ i.price }}</p>
+                                    </ion-card-content>
+                                </ion-card>
+                            </swiper-slide>
+                            
+                        </swiper>
+                        <div @click="openFirstModal()" style="width: 100%; display: flex; justify-content: center; align-items: center;">
+                            <button @click="openFirstModal()" style="z-index: 999; color: #901B6A; font-weight: bold; background-color: white;" type="button">İlan Ekle/Kaldır</button>
+                        </div>
+                    </ion-col>
+                
+                    <ion-col  size="1" class="center-icon ion-align-self-center">
+                        <img style="object-fit: cover;" src="../assets/yon.png" alt="" />
+                    </ion-col>
+                
+                    <ion-col  class="item-scroll">
+                        <swiper :modules="modules" :slides-per-view="1" :navigation="true"
+                                :pagination="{ clickable: true }" :scrollbar="{ draggable: true }">
+                            <swiper-slide v-for="(i, index) in targetProduct" :key="index">
+                                <ion-card style="padding: 8px; background-color: #EBEBED; box-shadow: none">
+                                    <img style="border-radius: 10px; height: 90px" :src="'https://takasimos3.s3.eu-north-1.amazonaws.com' + i.showcase_image" />
+                                    <ion-card-content style="padding: 5px">
+                                        <p style="font-weight: bold; font-size: 12px; color: black; margin: 0; width: 100%;">{{ i.name }}</p>
+                                        <p style="font-size: 10px; margin: 0;">{{ i.city.name }} / {{ i.district.name }}</p>
+                                        <p style="font-weight: bold; color: black; margin: 0;">{{ i.price }}</p>
+                                    </ion-card-content>
+                                </ion-card>
+                            </swiper-slide>
+                            <div @click="openSecondModal()" style="width: 100%; display: flex; justify-content: center; align-items: center;">
+                                <button @click="openSecondModal()" style="z-index: 999; color: #901B6A; font-weight: bold; background-color: white;" type="button">İlan Ekle/Kaldır</button>
+                            </div>
+                        </swiper>
+                    </ion-col>
+                </ion-row>
+                
+
+                <ion-modal @did-dismiss="onFirstModalDismiss" id="product-detail-modal" ref="firstModal"
+                    :is-open="isFirstModalOpen">
+
+                    <div class="wrapper">
+                        <div class="takasimo-logo">
+                            <img src="@/assets/takasimo-icon.png" />
+                        </div>
+                        <div class="modal-close-button ion-activatable ripple-parent">
+                            <ion-icon color="primary" @click="closeFirstModal" :icon="closeOutline" size="large" />
+                            <!-- <ion-ripple-effect></ion-ripple-effect> -->
+                        </div>
+                        <ion-label>
+                            <div class="label1">
+                                <span>{{ meUserInfo?.name }} Kullanınıcısının Diğer Ürünleri</span>
+                            </div>
+                        </ion-label>
+
+                        <Swiper :modules="modules" :slides-per-view="2" :navigation="true">
+                            <swiper-slide v-for="(i, index) in meMoreProduct">
+                                <ion-card>
+                                    <ion-card-header>
+                                        <ion-card-title>{{ i?.price }}₺</ion-card-title>
+                                        <ion-card-subtitle>{{ i?.name }}</ion-card-subtitle>
+                                    </ion-card-header>
+
+                                    <ion-card-content>
+                                        <img style="width: 150px; height:70px; object-fit:contain;"
+                                            :src="'https://takasimos3.s3.eu-north-1.amazonaws.com' + i?.showcase_image" />
+                                    </ion-card-content>
+                                    <ion-card-footer>
+                                        <!-- <ion-checkbox @ionChange="(e: CustomEvent<any>) => handleCheckboxChange(e, i)">
+
+                                        </ion-checkbox> -->
+                                        <!-- {{ 
+                                                    i.product_code
+                                                 }} -->
+                                        <ion-checkbox :id="'checkbox-' + i.product_code"
+                                            :data-product-code="i.product_code"
+                                            @ionChange="(e: CustomEvent<any>) => handleCheckboxChange(e, i)">
+                                        </ion-checkbox>
+                                    </ion-card-footer>
+                                </ion-card>
+
+                            </swiper-slide>
+                        </Swiper>
+                    </div>
+                </ion-modal>
+
+                <ion-modal id="product-text-detail-modal" ref="thirdModal" :is-open="isTextModalOpen"
+                    @did-dismiss="onTextModalDismiss">
+                    <div class="wrapper">
+
+                        <div class="takasimo-logo">
+                            <img src="@/assets/takasimo-icon.png" />
+                        </div>
+                        <div class="modal-close-button ion-activatable ripple-parent">
+                            <ion-icon color="primary" @click="onTextModalDismiss" :icon="closeOutline" size="large" />
+                            <!-- <ion-ripple-effect></ion-ripple-effect> -->
+                        </div>
+
+
+                        <ion-label>
+                            <div class="label2" style="font-size: 16px;">
+                                <p style="font-size: 20px; margin-bottom: 10px;">KVKK Aydınlatma Metni</p>
+
+                            </div>
+
+                            <div class="label2" style="font-size: 16px;">
+                                <p style="font-size: 9px; line-height: 10px; ">
+                                    6698 SAYILI KİŞİSEL VERİLERİN KORUNMASI KANUNU (“KVKK”) USUL VE ESASLARI UYARINCA
+                                    KİŞİSEL
+                                    VERİLERİNİZİN KORUNMASI HAKKINDA AYDINLATMA METNİ
+                                </p>
+                            </div>
+
+                            <div class="label2" style="font-size: 16px;">
+                                <p style="font-size: 9px; line-height: 10px; text-align: left; ">
+                                    Veri sorumlusu sıfatı ile Temiz Enerji Vakfı olarak (“Vakıf”); hangi kişisel
+                                    verilerinizi
+                                    hangi amaçlarla işleyeceğimiz konusunda işbu metin hazırlanmış olup, 6698 sayılı
+                                    Kişisel
+                                    Verilerin Korunmasına İlişkin Kanun’a (“KVKK”) uygun olarak kişisel verilerinizin
+                                    korunması
+                                    hususunda gerekli önlemlerin alındığını bildiririz.
+                                </p>
+                            </div>
+
+                            <div class="label2" style="font-size: 16px;">
+                                <p style="font-size: 9px; line-height: 10px; text-align: left; ">
+                                    Aşağıda belirttiğimiz kişisel verilerinizi her koşulda hukuka ve dürüstlük
+                                    kurallarına
+                                    uygun, doğruluğunu ve en güncel halini koruyarak, belirli, açık ve hukuka uygun
+                                    amaçlar
+                                    için, işlenecekleri amaçla bağlantılı, sınırlı ve ölçülü olacak şekilde, ilgili
+                                    mevzuatta
+                                    öngörülen veya işlendikleri amaç için gerekli olan süre kadar saklayarak
+                                    işleyeceğimizi
+                                    bildiririz.
+                                </p>
+                            </div>
+
+                            <div class="label2" style="font-size: 16px;">
+                                <p style="font-size: 9px; line-height: 10px; text-align: left; ">
+                                    Kişisel verileriniz elektronik ve/veya fiziksel ortamlarda saklanacaktır. Vakfımız
+                                    tarafından temin edilen ve saklanan kişisel verilerinizin saklandıkları ortamlarda
+                                    yetkisiz
+                                    erişime maruz kalmamaları, kaybolmamaları ve zarar görmemeleri amacıyla gerekli
+                                    teknik
+                                    tedbirler uygulanarak korunmaktadır.
+                                </p>
+                            </div>
+
+                            <div class="label2" style="font-size: 16px;">
+                                <p style="font-size: 9px; line-height: 10px; text-align: left; ">
+                                    işisel verileriniz, size bildirilen amaçlar ve kapsam dışında kullanılmamak kaydı
+                                    ile
+                                    gerekli tüm bilgi güvenliği tedbirleri de alınarak işlenecek ve yasal saklama
+                                    süresince veya
+                                    böyle bir süre öngörülmemişse işleme amacının gerekli kıldığı süre boyunca
+                                    saklanacak ve
+                                    işlenecektir. Bu süre sona erdiğinde, kişisel verileriniz silinme, yok edilme ya da
+                                    anonimleştirme yöntemleri ile Vakfımızın veri akışlarından çıkarılacaktır.
+                                </p>
+                            </div>
+
+                            <div class="label2" style="font-size: 16px;">
+                                <p style="font-size: 9px; line-height: 10px; text-align: left; ">
+                                    işisel verileriniz, size bildirilen amaçlar ve kapsam dışında kullanılmamak kaydı
+                                    ile
+                                    gerekli tüm bilgi güvenliği tedbirleri de alınarak işlenecek ve yasal saklama
+                                    süresince veya
+                                    böyle bir süre öngörülmemişse işleme amacının gerekli kıldığı süre boyunca
+                                    saklanacak ve
+                                    işlenecektir. Bu süre sona erdiğinde, kişisel verileriniz silinme, yok edilme ya da
+                                    anonimleştirme yöntemleri ile Vakfımızın veri akışlarından çıkarılacaktır.
+                                </p>
+                            </div>
+
+                            <div class="label2" style="font-size: 16px;">
+                                <p style="font-size: 9px; line-height: 10px; text-align: left; ">
+                                    işisel verileriniz, size bildirilen amaçlar ve kapsam dışında kullanılmamak kaydı
+                                    ile
+                                    gerekli tüm bilgi güvenliği tedbirleri de alınarak işlenecek ve yasal saklama
+                                    süresince veya
+                                    böyle bir süre öngörülmemişse işleme amacının gerekli kıldığı süre boyunca
+                                    saklanacak ve
+                                    işlenecektir. Bu süre sona erdiğinde, kişisel verileriniz silinme, yok edilme ya da
+                                    anonimleştirme yöntemleri ile Vakfımızın veri akışlarından çıkarılacaktır.
+                                </p>
+                            </div>
+                        </ion-label>
+
+                    </div>
+
+                </ion-modal>
+
+
+                <ion-modal @did-dismiss="openSecondModalDismiss" id="product-detail-modal" ref="secondModal"
+                    :is-open="isSecondModalOpen">
+
+                    <div class="wrapper">
+                        <div class="takasimo-logo">
+                            <img src="@/assets/takasimo-icon.png" />
+                        </div>
+                        <div class="modal-close-button ion-activatable ripple-parent">
+                            <ion-icon color="primary" @click="closeSecondModal" :icon="closeOutline" size="large" />
+                            <!-- <ion-ripple-effect></ion-ripple-effect> -->
+                        </div>
+                        <ion-label>
+                            <div class="label1">
+                                <span>{{ targetUserInfo?.name }} Kullanınıcısının Diğer Ürünleri</span>
+                            </div>
+                        </ion-label>
+
+                        <Swiper :modules="modules" :slides-per-view="2" :navigation="true">
+                            <swiper-slide v-for="(i, index) in targetMoreProduct">
+                                <ion-card>
+                                    <ion-card-header>
+                                        <ion-card-title>{{ i?.price }}₺</ion-card-title>
+                                        <ion-card-subtitle>{{ i?.name }}</ion-card-subtitle>
+                                    </ion-card-header>
+
+                                    <ion-card-content>
+                                        <img style="width: 150px; height:70px; object-fit:contain;"
+                                            :src="'https://takasimos3.s3.eu-north-1.amazonaws.com' + i?.showcase_image" />
+                                    </ion-card-content>
+                                    <ion-card-footer>
+                                        <!-- <ion-checkbox
+                                        @ionChange="(e: CustomEvent<any>) => addToTargetSwap(e, i)"></ion-checkbox> -->
+
+
+
+                                        <ion-checkbox :id="'checkbox-' + i.product_code"
+                                            :data-product-code="i.product_code"
+                                            @ionChange="(e: CustomEvent<any>) => addToTargetSwap(e, i)">
+                                        </ion-checkbox>
+
+
+                                    </ion-card-footer>
+                                </ion-card>
+
+                            </swiper-slide>
+                        </Swiper>
+                    </div>
+                </ion-modal>
+
+
+            </ion-grid>
+        
+            <ion-row class="offer-settings ion-align-items-start ion-justify-content-start">
+                <ion-col size="12">
+                    <ion-grid>
+                        <ion-row  class="ion-align-items-center ion-justify-content-center" style="margin-bottom: 20px;  position: relative;  height: 10px;"     >
+                            <ion-col style="position: relative; display: flex; justify-content: center;">
+                                <button :style="{ backgroundColor: selected === 'offer' ? 'purple' : 'gainsboro' }"
+                                    style="width: 50%; color: white; font-weight: bold; height: 40px; border-radius: 2vh; position: absolute; left: 25px;"
+                                    @click="selectButton('offer')" expand="full">
+                                    Para Teklif Et
+                                </button>
+                                <button :style="{ backgroundColor: selected === 'request' ? 'purple' : 'gainsboro' }"
+                                    style="width: 50%; height: 40px; color: white; border-radius: 2vh; position: absolute; right: 25px;"
+                                    @click="selectButton('request')" expand="full">
+                                    Para Talep Et
+                                </button>
+                            </ion-col>
+                        </ion-row>
+            
+                        <ion-row class="ion-justify-content-center"  style="border-bottom: 1px solid gainsboro; height: 70px;">
+                            <ion-col size="12" class="offer-price-container" >
+                                <ion-input style="width: 40%;" v-model="formData.latest_offer.price" type="text"
+                                    ></ion-input>
+                                <span>₺</span>
+                            </ion-col>
+                        </ion-row>
+                    </ion-grid>
+                </ion-col>
+            </ion-row>
+            
+            
+
+            <ion-row  class="message-container ion-justify-content-center">
+                <ion-col size="5" style="" class="ion-align-items-center ion-justify-content-center flex-col">
+                    <ion-label style="margin-left: 10px;">Mesaj</ion-label>
+                </ion-col>
+                <ion-col size=" 6" style="margin-top: 13px;">
+                    <ion-textarea style="width: 100%;" v-model="formData.latest_offer.productMessage" :cols="12"
+                        :rows="2" placeholder="Açıklama giriniz" :maxlength="120"
+                        :class="{ 'error': formData.latest_offer.productMessage.length >= 200 }"></ion-textarea>
+                    <div v-if="formData.latest_offer.productMessage.length >= 200" class="error-message">
+                        Maksimum karakter sayısına ulaşıldı!
+                    </div>
+                </ion-col>
+            </ion-row>
+
+            
+
+            <ion-row class=""  style="bottom: 0; width: 100%;">
+                <ion-col size="12" @click="showText">
+                    <p @click="showText">Kişisel verilerin işlenmesine dair aydınlatma metni</p>
+                </ion-col>
+                <ion-col size="12" style="display: flex; align-items: center; gap: 10px;">
+                    <ion-checkbox @ionChange="onCheckboxChange"></ion-checkbox>
+                    <ion-label>İlan verme kurallarını kabul ediyorum</ion-label>
+                </ion-col>
+                <ion-col size="12">
+                    <ion-button @click="sendOffer" expand="full">Teklif ver</ion-button>
+                </ion-col>
+            </ion-row>
+        </ion-content>
+    </ion-page>
+</template>
+
+<style lang="scss" scoped>
+ion-modal#product-detail-modal {
+    --width: 400px;
+    --height: 300px;
+
+    --border-radius: 30px;
+    --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+    --overflow: visible;
+
+
+
+    .wrapper {
+        //padding: 60px 10px 20px 10px;
+        padding-top: 40px;
+        overflow-x: none;
+        // background-color: gray;
+        overflow-y: none;
+        // background-color: red;
+        // overflow-y: none;
+
+        .takasimo-logo {
+            position: absolute;
+            top: -60px;
+            left: calc(50% - 50px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            background: var(--primary);
+            width: 100px;
+            height: 100px;
+            border-radius: 50px;
+            z-index: 20003;
+
+            img {
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        .modal-close-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20003;
+            cursor: pointer;
+            height: 32px;
+            width: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .label1 {
+            font-size: 16px;
+            font-family: var(--font-medium), sans-serif;
+            text-align: center;
+            font-weight: bold;
+            line-height: 18px;
+            margin-bottom: 10px;
+        }
+
+        .label2 {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            font-size: 18px;
+            font-family: var(--font-bold), sans-serif;
+            margin-bottom: 20px;
+            text-align: center;
+            height: 70%;
+            padding: 10px;
+            overflow-x: scroll;
+            overflow-y: hidden;
+            //background-color: blue;
+
+
+            .card {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-around;
+                margin: 5px;
+                width: 150px;
+                background-color: gray;
+                height: 100%;
+
+                .card-header {
+                    ///  background-color: red;
+                    height: 100px;
+
+                    img {
+                        border-radius: 5px;
+                        height: 100%;
+                        object-fit: cover;
+                    }
+                }
+
+                .card-body {
+                    //  background-color: blue;
+
+                    p {
+                        text-align: left;
+                        margin-left: 5px;
+                    }
+                }
+
+                .card-footer {
+                    width: 100%;
+                    padding: 0px;
+
+                }
+
+
+            }
+
+        }
+
+
+    }
+}
+
+
+
+
+.content {
+    --padding-bottom: env(safe-area-inset-bottom);
+   
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.trader-list {
+    margin: 10px 0;
+
+    .trader-col-left,
+    .trader-col-right {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        p {
+            margin: 0;
+            padding: 0;
+        }
+    }
+
+    .trader-col-left {
+        text-align: left;
+    }
+
+    .trader-col-right {
+        text-align: center;
+    }
+}
+
+// .swap-container {
+//     flex: 1;
+//     display: flex;
+//     flex-direction: row;
+
+//     .item-scroll {
+//         flex: 1;
+//         overflow-x: auto;
+//         overflow-y: hidden;
+//         padding: 0 10px;
+
+//         .swiper-slide {
+//             width: auto;
+//             flex-shrink: 0;
+//         }
+
+//         .ion-card {
+//             margin-right: 10px;
+//         }
+
+//         img {
+//             width: 100%;
+//             height: auto;
+//         }
+//     }
+
+
+.swap-container {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+
+    .item-scroll {
+        flex: 1;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0 10px;
+
+        .swiper-slide {
+            width: auto;
+            flex-shrink: 0;
+
+        }
+
+        .ion-card {
+            margin-right: 10px;
+        }
+
+        img {
+            width: 100%;
+            height: auto;
+        }
+    }
+
+
+    .center-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+
+        img {
+            height: 50px;
+            width: 50px;
+        }
+    }
+}
+
+.offer-settings {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    .offer-button {
+        display: flex;
+        justify-content: space-between;
+
+        .offerButton1,
+        .offerButton2 {
+            height: 40px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .offerButton1 {
+            background-color: #8F1B69;
+            color: white;
+        }
+
+        .offerButton2 {
+            background-color: #DFD5DC;
+        }
+    }
+
+    .offer-price-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      
+
+        ion-input {
+            border-bottom: 1px solid gainsboro;
+            margin-right: 5px;
+        }
+
+        span {
+            margin-top: 10px;
+        }
+    }
+}
+
+.message-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+
+    ion-label {
+        display: flex;
+        align-items: center;
+    }
+
+    ion-input {
+        width: 100%;
+        --padding-start: 0;
+        --padding-end: 0;
+        --padding-top: 0;
+        --padding-bottom: 0;
+        border: none;
+    }
+}
+
+.notification {
+    margin-bottom: 15px;
+    padding-top: 10px;
+
+    p {
+        text-align: center;
+        margin: 0;
+        font-size: 13px;
+    }
+}
+
+.check-container {
+    background-color: rgb(229, 226, 226);
+    border-radius: 10px 10px 0 0;
+    padding: 5px;
+
+    ion-button {
+        margin-top: 10px;
+    }
+}
+
+
+ion-modal#product-text-detail-modal {
+    --width: 380px;
+    --height: 50vh;
+    /* Ekranın yarısı */
+    --border-radius: 30px;
+    --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+    --overflow: visible;
+
+    .wrapper {
+        padding: 60px 10px 20px 10px;
+        max-height: calc(50vh - 80px);
+        /* İçerik için maksimum yükseklik ayarla */
+        overflow-y: auto;
+        /* Dikey kaydırma çubuğunu etkinleştir */
+
+        .takasimo-logo {
+            position: absolute;
+            top: -50px;
+            left: calc(50% - 50px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            background: var(--primary);
+            width: 100px;
+            height: 100px;
+            border-radius: 50px;
+            z-index: 20003;
+
+            img {
+                width: 60px;
+                height: 60px;
+            }
+        }
+
+        .modal-close-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20003;
+            cursor: pointer;
+            height: 32px;
+            width: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .label1 {
+            font-size: 14px;
+            font-family: var(--font-medium), sans-serif;
+            text-align: center;
+            line-height: 18px;
+            margin-bottom: 10px;
+        }
+
+        .label2 {
+            font-size: 18px;
+            font-family: var(--font-bold), sans-serif;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        ion-button {
+            border-radius: 30px !important;
+            color: white;
+            width: 25%;
+            height: 20px;
+            position: absolute;
+            left: 28%;
+            --color: var(--black);
+            --padding-top: 15px;
+            --padding-bottom: 15px;
+            --padding-start: 60px;
+            --padding-end: 60px;
+            --border-radius: 30px;
+            --box-shadow: none;
+            font-family: var(--font-bold), sans-serif;
+            font-size: 16px;
+        }
+    }
+}
+</style>

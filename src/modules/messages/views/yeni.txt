@@ -1,0 +1,54 @@
+const TargethandleCheckboxChange = (event: CustomEvent, item: any): void => {
+    //console.log(item);
+
+    if (Array.isArray(formData.value.offer_detail.to)) {
+        // `item`'in `product_code` değerini kontrol et
+        const itemProductCode = item.product_code;
+
+        // formData'daki product_code'ları kontrol et
+        const exists = formData.value.offer_detail.to.some((existingItem: any) => existingItem.product_code === itemProductCode);
+
+        if (!exists) {
+            // Yeni bir nesne oluştur ve sadece gerekli bilgileri ekle
+            const newItem = {
+                product_code: item.product_code,
+                name: item.name,
+                image: item.showcase_image
+            };
+
+            // formData'ya yeni ürünü ekle
+            formData.value.offer_detail.to.push(newItem);
+            //console.log('Yeni ürün eklendi:', newItem);
+            //console.log('Güncellenmiş formData:', formData.value.offer_detail.to);
+        } else {
+            //console.log('form İçinde mevcut Olan Ürün:', item);
+            console.log("veri",formData.value)
+        }
+    } else {
+        console.error('formData.value.latest_offer.from dizisi değil');
+    }
+
+    const isChecked = (event.detail as { checked: boolean }).checked;
+
+    if (isChecked) {
+        // Eğer `item` daha önce `meProduct` dizisinde yoksa ekle
+        if (!targetSelectedProduct.value.some(existingItem => existingItem.product_code === item.product_code)) {
+            targetSelectedProduct.value.push(item);
+            //console.log(targetSelectedProduct.value);
+            $toast.success('Ürün Takasa eklendi', { position: 'top' });
+        } else {
+            // Eğer ürün zaten takasta ise kullanıcıya bilgi ver
+            //$toast.warning('Bu ürün zaten takasta', { position: 'top-right' });
+        }
+    } else {
+        // Ürün checkbox'ı işaretlenmemişse ve `meProduct` dizisinde varsa, çıkar
+        if (targetSelectedProduct.value.some(existingItem => existingItem.product_code === item.product_code)) {
+            targetSelectedProduct.value = targetSelectedProduct.value.filter((element: any) => element.product_code !== item.product_code);
+
+            // Aynı ürün `formData`'dan çıkar
+            formData.value.offer_detail.to = formData.value.offer_detail.to.filter((element: any) => element.product_code !== item.product_code);
+            console.log('Çıkarılan `formData`:', formData.value.offer_detail.to);
+            $toast.info('Ürün Takastan Çıkartıldı', { position: 'top-right' });
+        }
+    }
+}
