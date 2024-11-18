@@ -212,7 +212,7 @@ watch(
                 dopingApi.createOrderCode(productCode).then((res: any) => {
                     console.log("donen", res.data)
                 })
-               
+
 
             }
         }
@@ -221,23 +221,23 @@ watch(
 );
 
 
-    // Route değişiminde yapılacak işlemler
-    watch(
-      () => route.fullPath,
-      (newFullPath, oldFullPath) => {
+// Route değişiminde yapılacak işlemler
+watch(
+    () => route.fullPath,
+    (newFullPath, oldFullPath) => {
         console.log('Route değişti!');
         console.log('Eski Path:', oldFullPath);
         console.log('Yeni Path:', newFullPath);
 
         // Eğer reloadCount 0 ise, sayfayı yenileme
         selectedDopings.value.forEach(doping => {
-          doping.checked = false; // Her öğenin 'checked' değerini false yap
+            doping.checked = false; // Her öğenin 'checked' değerini false yap
         });
 
         // Burada başka route değişim işlemleri yapılabilir
-      },
-      { immediate: true } // İlk sayfa yüklemesi için tetiklenmesi
-    );
+    },
+    { immediate: true } // İlk sayfa yüklemesi için tetiklenmesi
+);
 
 
 
@@ -320,15 +320,17 @@ const selectDopingPeriod = (doping: any, period: any) => {
 
 
 
+// Define the ProductDoping interface outside of the function
+// Define the ProductDoping interface outside of the function
+interface ProductDoping {
+    price: number;
+    doping_code: string;
+    time: number;
+}
+
 const goTo = async () => {
     const selectedDopings = dopings.value.filter((doping) => doping.checked);
     dopingStore.setSelectedDopings(selectedDopings);
-
-    interface ProductDoping {
-        price: number;
-        doping_code: string;
-        time: number;
-    }
 
     const productItem = localStorage.getItem('lastCreatedProduct');
     if (!productItem) return; // Eğer ürün yoksa, işlemi sonlandır
@@ -361,6 +363,7 @@ const goTo = async () => {
     }
 }
 
+// Move the buildDopingsData function here, as it can now access ProductDoping
 const buildDopingsData = (selectedDopings: any[]): ProductDoping[] => {
     return selectedDopings.map(doping => {
         const selectedPeriod = doping.selectedPeriod;
@@ -381,6 +384,7 @@ const handleError = () => {
         // Hata sonrası yapılacak işlemler
     });
 }
+
 
 
 // Computed
