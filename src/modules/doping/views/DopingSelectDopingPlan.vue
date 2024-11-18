@@ -320,78 +320,68 @@ const selectDopingPeriod = (doping: any, period: any) => {
 
 
 
-const goTo = () => {
-    dopingStore.setSelectedDopings(dopings.value.filter((doping) => doping.checked));
-
+const goTo = async () => {
+    const selectedDopings = dopings.value.filter((doping) => doping.checked);
+    dopingStore.setSelectedDopings(selectedDopings);
 
     interface ProductDoping {
-        forEach(arg0: (element: any) => void): unknown;
-        price: number; // veya uygun bir tip
-        doping_code: string; // veya uygun bir tip
-        time: number
+        price: number;
+        doping_code: string;
+        time: number;
     }
 
-    // let orderCode = localStorage.getItem('createdOrderBy');
-    // orderCode = orderCode ? JSON.parse(orderCode) : null;
+    const productItem = localStorage.getItem('lastCreatedProduct');
+    if (!productItem) return; // Eğer ürün yoksa, işlemi sonlandır
 
-    let productItem = localStorage.getItem('lastCreatedProduct');
-    if (productItem) {
-        let product = JSON.parse(productItem);
-        let productCode = {
-            product_code: product.product_code
+    const product = JSON.parse(productItem);
+    const productCode = { product_code: product.product_code };
+
+    try {
+        const orderResponse = await dopingApi.createOrderCode(productCode);
+        const orderCode = orderResponse.data.order_code;
+
+        const dopingsData = buildDopingsData(selectedDopings);
+
+        const dopingResponse = await dopingApi.createProductDopings({
+            order_code: orderCode,
+            dopings: dopingsData,
+        });
+
+        paymentToken.setCreatedProductDoping(dopingResponse.data.token);
+        paymentModals.value = true;
+
+        // Bekleme süresi olmadan direkt ödeme işlemlerine geçiş yapabiliriz.
+        if (computedTotalPrice() > 0) {
+            dopingStore.setSelectedDopings(selectedDopings);
+            paymentModals.value = false;
+            router.push({ name: 'doping-payment', params: { code: productCode.product_code } });
         }
-        dopingApi.createOrderCode(productCode).then((res: any) => {
-            console.log("donen", res.data)
-            let doping = {
-                order_code: res.data.order_code,
-                dopings: [] as ProductDoping[], // items dizisi ProductDoping türünde
-            };
-            let item = dopingStore.selectedDopings;
-            item.forEach((element: any) => {
-                let dp = element.selectedPeriod;
-                dp.doping_code = element.doping_code
-                doping.dopings.push(dp);
-            });
-
-            dopingApi.createProductDopings(doping).then((res: any) => {
-                paymentToken.setCreatedProductDoping(res.data.token);
-                paymentModals.value = true
-
-                setTimeout(() => {
-                    if (computedTotalPrice() > 0) {
-                        dopingStore.setSelectedDopings(dopings.value.filter((doping) => doping.checked));
-                        paymentModals.value = false
-                        router.push({ name: 'doping-payment', params: { code: productCode.value } })
-                    }
-                }, 1000)
-
-
-            }).catch((error: any) => {
-                Swal.fire({
-                    title: "Lütfen telefon numaranızı doğrulayınız",
-                    heightAuto: false,
-                    icon: "error"
-                }).then(() => {
-                    // dopingStore.setSelectedDopings(dopings.value.filter((doping) => doping.checked));
-                    setTimeout(() => {
-                        if (computedTotalPrice() > 0) {
-                            // router.push({ name: 'doping-payment', params: { code: productCode.value } })
-                        }
-                    }, 1000)
-
-                });
-            });
-
-
-
-        })
-
+    } catch (error) {
+        handleError();
     }
-
-
-
-
 }
+
+const buildDopingsData = (selectedDopings: any[]): ProductDoping[] => {
+    return selectedDopings.map(doping => {
+        const selectedPeriod = doping.selectedPeriod;
+        return {
+            doping_code: doping.doping_code,
+            price: selectedPeriod.price,
+            time: selectedPeriod.time,
+        };
+    });
+}
+
+const handleError = () => {
+    Swal.fire({
+        title: "Lütfen telefon numaranızı doğrulayınız",
+        heightAuto: false,
+        icon: "error"
+    }).then(() => {
+        // Hata sonrası yapılacak işlemler
+    });
+}
+
 
 // Computed
 // const computedCheckedCount = () => {
