@@ -107,11 +107,24 @@
                         <ion-label style="margin-left: 10px; font-weight: bold; margin-top: 20px;  ">Paylaş</ion-label>
 
                         <ion-row size="2"
-                            style="padding: 10px; width: 50%; display:flex; justify-content: space-between; ">
-                            <ion-icon style="color:blue" :icon="logoFacebook"></ion-icon>
-                            <ion-icon style="color:red" :icon="logoInstagram"></ion-icon>
-                            <ion-icon style="color:green" :icon="logoWhatsapp"></ion-icon>
-                            <ion-icon style="color:black" :icon="mail"></ion-icon>
+                            style="padding: 10px; width: 30%; display:flex; justify-content: space-between; ">
+                            <a :href="'https://api.whatsapp.com/send?text=' + encodeURIComponent('Bu ilana göz atın: ') + encodeURIComponent(currentUrl)"
+                            target="_blank">
+                            <img style="height: 25px; width: 25px; border-radius: 50%; border: 2px solid white;"
+                                src="@/assets/wp.png" alt="WhatsApp Icon">
+                        </a>
+                        <a :href="twitterShareUrl" target="_blank">
+                            <img style="height: 25px; width: 25px; border-radius: 50%; border: 2px solid white;"
+                                src="@/assets/twitter.png" alt="Icon 1">
+                        </a>
+
+                        <a :href="'mailto:?subject=İlginç Bir Link&body=Bu ilana göz atın: ' + encodeURIComponent(currentUrl)"
+                       target="_blank">
+                      <img style="height: 25px; width: 25px; border-radius: 50%; border: 2px solid white;"
+                           src="@/assets/eposta.png" alt="E-posta Iconu">
+                    </a>
+
+                 
                         </ion-row>
 
                     </ion-col>
@@ -130,7 +143,7 @@
 import { IonButton, IonContent, IonModal, IonLabel, IonGrid, IonInput, IonCard, IonCardContent, IonRow, IonCol, IonTextarea, IonRadioGroup, IonRadio, IonIcon, IonItem, IonPage } from '@ionic/vue';
 import { calendarOutline, closeOutline, heart, starOutline, createOutline, heartOutline, timeOutline, eyeOutline, chevronForwardOutline, logoFacebook, logoInstagram, logoWhatsapp, mail } from 'ionicons/icons';
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted,computed } from 'vue';
 import Header from '@/components/Header.vue';
 import productApi from '@/services/productApi';
 import EditMyAds from './editMyAds.vue';
@@ -149,6 +162,12 @@ const product = ref<any>({});
 // Fetch product data on component mount
 
 
+const currentUrl = ref(window.location.href.replace('/myAdsDetail/', '/product-detail/'));
+
+const tweetText = ref('Bu ilana göz atın');
+const twitterShareUrl = computed(() => {
+    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText.value)}&url=${encodeURIComponent(currentUrl.value)}`;
+});
 
 
 const editMyAds = () => {
@@ -158,6 +177,7 @@ const editMyAds = () => {
 const editAdsDate = () => {
     router.push({ name: 'edit-ads-date', params: { code: productCode.value } })
 }
+
 
 const buyDoping = () => {
     useProductsStore().lastCreatedProduct = product.value

@@ -67,7 +67,7 @@
 <script lang="ts" setup>
 import { IonCol, IonGrid, IonLabel, IonRow, IonPage, IonInput, IonButton, IonIcon } from '@ionic/vue';
 import { ref, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router'; // Sadece useRoute'ü import ettik
+import { useRoute,useRouter } from 'vue-router'; // Sadece useRoute'ü import ettik
 import Header from "@/components/Header.vue";
 import MyAccountHeader from "@/modules/myAccount/components/MyAccountHeader.vue";
 import useUserInfoStore from '@/stores/userInfoStore';
@@ -75,9 +75,13 @@ import userEditApi from "@/services/userEditApi";
 import phoneVerify from '@/services/phoneVerify';
 import { useToast } from 'vue-toast-notification';
 import 'vue-toast-notification/dist/theme-sugar.css';
+import { useAuthStore } from "@/stores/authStore";
+const authStore = useAuthStore();
+
 const $toast = useToast();
 
 const route = useRoute(); // useRoute ile mevcut rotayı al
+const router = useRouter()
 const store = useUserInfoStore();
 const formattedPhone = ref('');
 const isPhoneValid = ref(true);
@@ -189,6 +193,9 @@ const savePhone = () => {
             $toast.success('Telefon numaranız başarıyla güncellendi', {
               position: 'top',
             })
+            console.log(response)
+            authStore.userSet(response);
+            router.push("/profile")
           })
           .catch(error => {
             console.error('Error updating phone number:', error);
@@ -212,7 +219,6 @@ watch(() => route.path, (newPath) => {
     if (userDataString) {
       const userData = JSON.parse(userDataString);
       console.log(userData);
-
       user.value.name = userData.name;
       user.value.photo = userData.photo;
     }
@@ -232,7 +238,6 @@ const resendVerificationCode = () => {
       })
     })
   }
-
 };
 
 

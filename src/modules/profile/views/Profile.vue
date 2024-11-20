@@ -30,7 +30,7 @@
                         <ion-col size="12" style="display: flex; align-items: center; position: relative;">
                             <ion-input disabled v-model="formData.email" placeholder="omercankara@gmail.com"
                                 class="form-control inputStyle"></ion-input>
-                           
+
                         </ion-col>
                     </ion-row>
 
@@ -39,7 +39,7 @@
                             <ion-label class="labelStyle">Cep Telefonu</ion-label>
                         </ion-col>
                         <ion-col size="12" style="display: flex; align-items: center; position: relative;">
-                            <ion-input disabled v-model="formData.phone" size="12" placeholder="552*****"
+                            <ion-input disabled v-model="formData.phone" size="12" placeholder="Telefon numarası ekleyiniz"
                                 class="form-control inputStyle"></ion-input>
                             <img @click="editProfile('phone')" class="editIcon" src="../assets/edit.png" alt="">
                         </ion-col>
@@ -69,7 +69,7 @@ import authApi from "../../../services/authApi"
 import useUserInfoStore from '@/stores/userInfoStore';
 
 import MyAccountHeader from "@/modules/myAccount/components/MyAccountHeader.vue";
-import { useRouter,useRoute } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 
 const router = useRouter();
 const route = useRoute();
@@ -91,12 +91,12 @@ const formData = ref<any>({
     password: ''
 })
 
-let user =  ref<any>({
+let user = ref<any>({
     name: 'sdf',
     last_name: '',
     email: '',
     phone: '',
-    photo:'',
+    photo: '',
     password: ''
 })
 
@@ -151,50 +151,47 @@ const loadUserData = () => {
 
 watch(() => route.path, (newPath) => {
 
-    loadUserData();
-    const userDataString = localStorage.getItem("user");
 
-    if (userDataString) {
-        const userData = JSON.parse(userDataString);
-        console.log(userData)
-        formData.value.name = userData.name;
-        user.value.name = userData.name
-        user.value.photo = userData.photo
-        formData.value.email = userData.email;
-        formData.value.phone = userData.phone;
-        console.log(formData.value.phone)
-    }
-
-
-    // meProduct.value = [];
-    // targetProduct.value = [];
     if (newPath === '/profile') {
         checkAuth()
         console.log("profil")
+        loadUserData();
+        const userDataString = localStorage.getItem("user");
+
+        if (userDataString) {
+            const userData = JSON.parse(userDataString);
+            console.log(userData)
+            formData.value.name = userData.name;
+            user.value.name = userData.name
+            user.value.photo = userData.photo
+            formData.value.email = userData.email;
+            formData.value.phone = userData.phone;
+            console.log(formData.value.phone)
+        }
     }
 });
 
 
 
 const checkAuth = async () => {
-  try {
-    const response = await authApi.me();
-    console.log(response.data); // Başarılı yanıt alındığında veriyi konsola yazdır
-  } catch (error: any) {
-    if (error.response && error.response.status === 401) {
-      // 401 hatası alındığında giriş sayfasına yönlendir
-      try {
-        $toast.error('Oturumunuz sonlandırıldı giriş ekranına yönlendiriliyorsunuz.!',{position:'top-right'});
-        setTimeout(() => {
-          router.push('/login'); // Yönlendirme işlemini bekleyin
-        }, 2000)
-      } catch (routingError) {
-        console.error('Yönlendirme hatası:', routingError);
-      }
-    } else {
-      console.error('Auth API çağrısı sırasında bir hata oluştu:', error);
+    try {
+        const response = await authApi.me();
+        console.log(response.data); // Başarılı yanıt alındığında veriyi konsola yazdır
+    } catch (error: any) {
+        if (error.response && error.response.status === 401) {
+            // 401 hatası alındığında giriş sayfasına yönlendir
+            try {
+                $toast.error('Oturumunuz sonlandırıldı giriş ekranına yönlendiriliyorsunuz.!', { position: 'top-right' });
+                setTimeout(() => {
+                    router.push('/login'); // Yönlendirme işlemini bekleyin
+                }, 2000)
+            } catch (routingError) {
+                console.error('Yönlendirme hatası:', routingError);
+            }
+        } else {
+            console.error('Auth API çağrısı sırasında bir hata oluştu:', error);
+        }
     }
-  }
 };
 
 
@@ -204,7 +201,7 @@ const checkAuth = async () => {
 
 onMounted(() => {
     const userDataString = localStorage.getItem("user");
-   
+
     if (userDataString) {
         const userData = JSON.parse(userDataString);
         console.log(userData)

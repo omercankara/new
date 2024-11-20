@@ -328,9 +328,49 @@ interface ProductDoping {
     time: number;
 }
 
+// const goTo = async () => {
+//     const selectedDopings = dopings.value.filter((doping) => doping.checked);
+//     dopingStore.setSelectedDopings(selectedDopings);
+
+//     const productItem = localStorage.getItem('lastCreatedProduct');
+//     if (!productItem) return; // Eğer ürün yoksa, işlemi sonlandır
+
+//     const product = JSON.parse(productItem);
+//     const productCode = { product_code: product.product_code };
+
+//     try {
+//         const orderResponse = await dopingApi.createOrderCode(productCode);
+//         const orderCode = orderResponse.data.order_code;
+
+//         const dopingsData = buildDopingsData(selectedDopings);
+
+//         const dopingResponse = await dopingApi.createProductDopings({
+//             order_code: orderCode,
+//             dopings: dopingsData,
+//         });
+
+//         paymentToken.setCreatedProductDoping(dopingResponse.data.token);
+//         paymentModals.value = true;
+
+//         // Bekleme süresi olmadan direkt ödeme işlemlerine geçiş yapabiliriz.
+//         if (computedTotalPrice() > 0) {
+//             dopingStore.setSelectedDopings(selectedDopings);
+//             paymentModals.value = false;
+//             router.push({ name: 'doping-payment', params: { code: productCode.product_code } });
+//         }
+
+//     } catch (error) {
+//         handleError();
+//     }
+// }
+
+
 const goTo = async () => {
     const selectedDopings = dopings.value.filter((doping) => doping.checked);
     dopingStore.setSelectedDopings(selectedDopings);
+
+    // paymentModal.show değerini true yapıyoruz
+    paymentModals.value = true;
 
     const productItem = localStorage.getItem('lastCreatedProduct');
     if (!productItem) return; // Eğer ürün yoksa, işlemi sonlandır
@@ -349,6 +389,9 @@ const goTo = async () => {
             dopings: dopingsData,
         });
 
+        // paymentModal.show değerini işlem tamamlandığında false yapıyoruz
+        paymentModals.value = false;
+
         paymentToken.setCreatedProductDoping(dopingResponse.data.token);
         paymentModals.value = true;
 
@@ -358,12 +401,15 @@ const goTo = async () => {
             paymentModals.value = false;
             router.push({ name: 'doping-payment', params: { code: productCode.product_code } });
         }
+
     } catch (error) {
+        // Hata durumunda paymentModal.show'yu false yapıyoruz
+        paymentModals.value = false;
         handleError();
     }
 }
 
-// Move the buildDopingsData function here, as it can now access ProductDoping
+
 const buildDopingsData = (selectedDopings: any[]): ProductDoping[] => {
     return selectedDopings.map(doping => {
         const selectedPeriod = doping.selectedPeriod;

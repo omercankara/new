@@ -78,7 +78,7 @@ const editUser = () => {
         $toast.success('Profil bilgileriniz güncellenmiştir.', {
             position: 'top',
         })
-        router.push({ name: 'home' })
+        router.push({ name: 'profile' })
     })
 }
 

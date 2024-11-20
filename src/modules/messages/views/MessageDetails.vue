@@ -2,37 +2,43 @@
     <ion-page>
 
         <Header />
-        <ion-content ref="content" >
+        <ion-content  ref="content">
+            <div id="grid">
             <ion-grid style=" overflow-y: scroll !important; display: flex; flex-direction: column; justify-content: center; ">
-             <ion-row style="position: fixed; top: 40px; z-index: 999; width: 100%; height: 50px; background-color: #F5F5F5;">
+            
+
+             
+                <ion-row
+                    style="position: fixed; top: 40px; z-index: 999; width: 100%; height: 50px; background-color: #F5F5F5;">
                     <ion-col size="12">
-                        <ion-row  >
+                        <ion-row>
                             <ion-col size="5" style="display:flex; flex-direction: row; ">
                                 <!-- <img v-if="chatMessageList[0]?.offer_detail.to[0]?.image"
                                     :src="`https://takasimos3.s3.eu-north-1.amazonaws.com${chatMessageList[0].offer_detail.to[0]?.image}`"
                                     style="height: 70px; object-fit: contain;" alt="Product Image" /> -->
-                                    
-                                    <img v-if="userInfo.latest_offer?.from[0]?.image"
-                                    style="height: 35px; object-fit: contain;" alt="Product Image"
+
+                                <img v-if="userInfo.latest_offer?.from[0]?.image"
+                                    style="height: 25px; object-fit: contain;" alt="Product Image"
                                     :src="`https://takasimos3.s3.eu-north-1.amazonaws.com${userInfo.latest_offer?.to[0]?.image}`" />
-                           
-                               <img v-else-if="userInfo.latest_offer?.to[0]?.image"
-                                    style="height: 50px; object-fit: contain;" alt="Product Image"
+
+                                <img v-else-if="userInfo.latest_offer?.to[0]?.image"
+                                    style="height: 25px; object-fit: contain;" alt="Product Image"
                                     :src="`https://takasimos3.s3.eu-north-1.amazonaws.com${userInfo.latest_offer?.to[0]?.image}`" />
-                           
-                               <img v-else
-                                    style="height: 50px; object-fit: contain;" alt="Product Image"
+
+                                <img v-else style="height: 35px; object-fit: contain;" alt="Product Image"
                                     :src="`https://takasimos3.s3.eu-north-1.amazonaws.com${userInfo.latest_offer?.showcase_image}`" />
-                                   
+
                                 <ion-col style="display:flex;flex-direction:column;" v-if="userInfo._from !== userCode">
                                     <p @click="goProfile(userInfo._from !== userCode ? userInfo._from : userInfo._to)"
-                                        style="margin:0px; font-size: 20px; font-weight: bold; margin-left: 10px">
-                                    <p style="margin:0px;  margin-left: 10px">{{ userInfo.latest_offer.meOwnerInfo.name }} </p>
-                                   
-                                </p>
-                                  
+                                        style="margin:0px; font-size: 20px; font-weight: bold; margin-left: 10px" />
+                                    <p style="margin: 0px; margin-left: 10px;">
+                                        {{ userInfo.latest_offer.meName ? userInfo.latest_offer.meName :
+                                            userInfo.latest_offer.meOwnerInfo.name }}
+                                    </p>
+
+
                                 </ion-col>
-                            
+
                                 <ion-col style="display:flex;flex-direction:column;" v-else>
                                     <p @click="goProfiles(userInfo._from == userCode ? userInfo.latest_offer.targetOwnerInfo.user_code : userInfo.latest_offer.targetOwnerInfo.user_code)"
                                         style="margin:0px; font-size: 15px; width: 100px;  font-weight: bold; margin-left: 10px">
@@ -43,10 +49,10 @@
                             </ion-col>
                             <ion-col size="7"
                                 style="display:flex; justify-content: space-between; align-items: center; ">
-                              
+
                             </ion-col>
                         </ion-row>
-                    </ion-col>       
+                    </ion-col>
                 </ion-row>
 
 
@@ -54,10 +60,10 @@
                     <ion-col size="2">Bugün</ion-col>
                 </ion-row>
 
-              
 
 
-                <ion-row class="ion-justify-content-center" style="margin-bottom: 10px;  " id="grid">
+
+                <ion-row class="ion-justify-content-center" style="margin-bottom: 50px; " >
                     <ion-col size="11" style="background-color:  ">
                         <ion-row
                             style="margin-bottom: 40px; display: flex; border-radius: 1vh;   background-color: #f8f9fa; justify-content: flex-end;"
@@ -113,43 +119,46 @@
                             <ion-row v-if="message.offer_detail.from.length > 0 || message.offer_detail.to.length > 0">
                                 <ion-col size="12">
 
-                                    <p style="color: black; text-align: center">
-                                        <!-- Use conditional rendering to display the correct message based on offer_type -->
-                                        <span
-                                            v-if="message?.offer_detail.price && message?.offer_detail.offer_type === 'offer'">
-                                            {{ message.offer_detail.price }} ₺ Teklifinde bulunuldu
-                                        </span>
-                                        <span
-                                            v-else-if="message?.offer_detail.price && message?.offer_detail.offer_type === 'request'">
-                                            {{ message.offer_detail.price }} ₺ Talebinde bulunuldu
-                                        </span>
-                                    </p>
+                                    <span
+                                        v-if="message?.offer_detail.price && message?.offer_detail.offer_type === 'offer' && userCode === message?._from"
+                                        style="color: black; display: block; text-align: center">
+                                        +{{ message.offer_detail.price }}₺ Para Teklif edildi
+                                    </span>
 
-                                    <p @click="showOfferDetails(message)" style="
+                                    <!-- Talep Durumu -->
+                                    <span
+                                        v-else="message?.offer_detail.price && message?.offer_detail.offer_type === 'request'"
+                                        style="color: black; display: block; text-align: center">
+                                        {{ message.offer_detail.price }} ₺ Talebinde bulunuldu
+                                    </span>
+
+                                    <p v-if="message.offer_detail.from.length > 0 && message.offer_detail.to.length > 0"
+                                        @click="showOfferDetails(message)" style="
                             text-align:center;
                             color:purple;
                             font-weight: bold">
                                         Teklifi İncele
                                     </p>
+
                                 </ion-col>
                                 <ion-col size="12">
-                                    <p v-if="message?.offer_detail.productMessage" style="
+                                    <!-- <p v-if="message?.offer_detail.productMessage" style="
                             margin:0px;
                             border-radius: 1vh;
                             padding: 20px;
                             background-color: rgb(49, 0, 64);
                             color:white; text-align: center">
                                         {{ message.offer_detail.productMessage }}
-                                    </p>
-
-                                    <!-- <p v-else style="
-                                    margin:0px;
-                                    border-radius: 1vh;
-                                    padding: 20px;
-                                    background-color: rgb(49, 0, 64);
-                                    color:white; text-align: center">
-                                        Herhangi bir mesaj iletilmedi
                                     </p> -->
+
+                                    <span v-if="message?.offer_detail.productMessage"
+                                        style="position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); z-index: 1; color: white;">
+                                        {{ message.offer_detail.productMessage }}
+
+                                    </span>
+                                    <img v-if="message?.offer_detail.productMessage" src="../../../assets/mask.png"
+                                        alt="" style="width: 100%; height: auto; display: block;">
+
 
                                 </ion-col>
 
@@ -185,7 +194,7 @@
                                     </ion-button>
                                 </ion-col>
 
-                               
+
 
                             </ion-row>
 
@@ -198,24 +207,34 @@
                         margin:0px;
                         border-radius: 1vh;
                         padding: 20px;
-                        background-color: purple;
-                        color:white; text-align: center">
+                        margin-bottom: 20px
+                        ;
+                        background-color: gainsboro;
+                        color:black; text-align: center">
                                         <!-- {{ message.offer_detail.price }}₺ Para Teklifinde bulunuldu -->
 
 
 
-                                        <span v-if="message?.offer_detail.offer_type === 'offer'">
-                                            {{ message?.offer_detail.price }} ₺ Teklifinde bulunuldu
-                                        </span>
-                                        <span v-else-if="message?.offer_detail.offer_type === 'request'">
-                                            {{ message?.offer_detail.price }} ₺ Talebinde bulunuldu
-                                        </span>
-                                        <span v-else>
-                                            {{ message?.offer_detail.price }} ₺ Bilgi mevcut değil
+                                        <span
+                                            v-if="message?.offer_detail.offer_type === 'offer' && userCode === message._from">
+                                            Ürün için +{{ message?.offer_detail.price }} ₺ Para teklifi yaptınız
+
                                         </span>
 
+                                        <span
+                                            v-else="message?.offer_detail.offer_type === 'offer' && userCode !== message._from">
+                                            Ürün için +{{ message?.offer_detail.price }}₺ para teklifinde bulundu
+                                        </span>
+
+
                                     </p>
-                                    <p>{{ message.offer_detail.productMessage }}</p>
+                                    <span v-if="message?.offer_detail.productMessage"
+                                        style="position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); z-index: 1; color: white;">
+                                        {{ message.offer_detail.productMessage }}
+
+                                    </span>
+                                    <img v-if="message?.offer_detail.productMessage" src="../../../assets/mask.png"
+                                        alt="" style="width: 100%; height: 100px; display: block;">
                                     <ion-row>
                                         <ion-col size="6" v-if="message._from !== userCode">
                                             <ion-button @click="offerResponse('Accept', message)" expand="full">Kabul
@@ -246,28 +265,47 @@
                             </ion-row>
 
                             <!-- Yalnızca 'message.offer_detail.message' mevcutsa göster -->
-                            <ion-col v-if="message.offer_detail.message" size="12">
+                            <ion-col style="background-color: #fff; margin-bottom: 0px; position: relative;"
+                                v-if="message.offer_detail.message" size="12">
+
+                                <!-- Sohbet Balonu -->
                                 <p :style="{
-                                    'background-color': message._from === userCode ? '#901B6A' : 'gainsboro',
+                                    'background-color': message._from === userCode ? '#901B6A' : 'gainsboro', /* Göndericiye göre renk */
                                     'color': message._from === userCode ? 'white' : 'black',
-                                    'font-weight': '',
-                                    'margin': '0px',
-                                    'border-radius': '1vh',
-                                    'padding': '20px',
-                                    'float': message._from === userCode ? 'left' : 'right',
-                                    'width': message._from === userCode ? '80%' : '70%',
-                                    'text-align': message._from === userCode ? 'left' : 'left',
+                                    'margin': '10px 0', /* Yukarı-aşağı boşluk */
+                                    'padding': '10px 15px', /* İç dolgu */
+                                    'border-radius': '15px', /* Köşe yuvarlama */
+                                    'position': 'relative', /* Üçgen için referans */
+                                    'width': 'fit-content', /* Metin uzunluğuna göre genişlik */
+                                    'max-width': '70%', /* Maksimum genişlik */
+                                    'text-align': 'left', /* Balon içindeki yazı soldan hizalı */
+                                    'box-shadow': '0px 2px 5px rgba(0, 0, 0, 0.2)', /* Hafif gölge */
+                                    'float': 'right', /* Balonları sağa hizalar */
+                                    'clear': 'both' /* Her balon yeni bir satırda başlar */
                                 }">
                                     {{ message.offer_detail.message }}
+
+                                    <!-- Konuşma Balonunun Sağ Alt Köşesi -->
+                                    <img v-if="message._from === userCode" src="../../../assets/sag.png" alt="sağ ok"
+                                        style="position: absolute; bottom: -10px; right: -0px; width: 20px; height: auto;">
+
+                                    <!-- Konuşma Balonunun Sol Alt Köşesi -->
+                                    <img v-if="message._from !== userCode" src="../../../assets/sol.png" alt="sol ok"
+                                        style="position: absolute; bottom: -10px; left: -0px; width: 20px; height: auto;">
                                 </p>
                             </ion-col>
+
+
+
+
+
 
                             <!-- Yalnızca 'message.offer_detail.offer_response' mevcutsa göster -->
                             <ion-col v-if="message.offer_detail.offer_response" size="12"
                                 style="display: flex; justify-content: center;  width: 100%; align-items: center;">
                                 <p :style="{
-                                    'background-color': message._from === userCode ? 'gainsboro' : 'gainsboro',
-                                    'color': message._from === userCode ? 'white' : 'black',
+                                    //'background-color': message._from === userCode ? 'gainsboro' : 'gainsboro',
+                                    'color': message._from === userCode ? 'black' : 'black',
                                     'font-weight': '',
                                     'margin': '0px',
                                     'border-radius': '1vh',
@@ -277,41 +315,40 @@
                                 }">
                                     {{ message.offer_detail.offer_response }}
                                 </p>
+
                             </ion-col>
                         </ion-row>
                     </ion-col>
-                    <ion-row style="background-color: #F3F2F6; height:100px;  border-top-left-radius:2vh; border-top-right-radius:2vh;">
-                        <ion-col size="12"
-                            style=" display: flex; justify-content: space-around;">
-                            <p style="font-size: 10px; cursor: pointer;"
-                                @click="autoMessage('Merhaba')">
-                                Merhaba</p>
-                            <p style="font-size: 10px; cursor: pointer;" @click="autoMessage('Tamam')">
-                                Tamam
-                            </p>
-                            <p style="font-size: 0.625rem; cursor: pointer;"
-                                @click="autoMessage('İlgilenmiyorum')">
-                                İlgilenmiyorum</p>
-                            <p style="font-size: 0.625rem; cursor: pointer;"
-                                @click="autoMessage('Acil Alıcıyım')">Acil
-                                Alıcıyım</p>
-                        </ion-col>
 
-                        <ion-col size="10">
-                            <ion-input style="background-color: white; border-radius: 10px;"
-                                v-model="formData.offer_detail.message" placeholder="Mesaj Yaz"></ion-input>
-                        </ion-col>
-                        <ion-col size="2" style="display: flex; justify-content: center; ">
-                            <button  class="sendBtnİmg"    @click="sendOffer('Chat')">
-                                
-                                <img style="height: 35px;" src="../../../assets/chatButton.png" alt="">
-                            </button>
-                        </ion-col>
-                    </ion-row>
+                </ion-row>
+                <ion-row
+                    style="background-color: #F3F2F6; width: 100%; height:100px; position: fixed; bottom: 0px;  border-top-left-radius:2vh; border-top-right-radius:2vh;">
+                    <ion-col size="12" style=" display: flex; justify-content: space-around;">
+                        <p style="font-size: 10px; cursor: pointer;" @click="autoMessage('Merhaba')">
+                            Merhaba</p>
+                        <p style="font-size: 10px; cursor: pointer;" @click="autoMessage('Tamam')">
+                            Tamam
+                        </p>
+                        <p style="font-size: 0.625rem; cursor: pointer;" @click="autoMessage('İlgilenmiyorum')">
+                            İlgilenmiyorum</p>
+                        <p style="font-size: 0.625rem; cursor: pointer;" @click="autoMessage('Acil Alıcıyım')">Acil
+                            Alıcıyım</p>
+                    </ion-col>
+
+                    <ion-col size="10">
+                        <ion-input style="background-color: white; border-radius: 10px;"
+                            v-model="formData.offer_detail.message" placeholder="Mesaj Yaz"></ion-input>
+                    </ion-col>
+                    <ion-col size="2" style="display: flex; justify-content: center; ">
+                        <button class="sendBtnİmg" @click="sendOffer('Chat')">
+
+                            <img style="height: 35px;" src="../../../assets/chatButton.png" alt="">
+                        </button>
+                    </ion-col>
                 </ion-row>
             </ion-grid>
 
-
+        </div>
 
             <!-- <ion-infinite-scroll @ionInfinite="handleInfiniteScroll" style="display: hidden;">
                 <ion-infinite-scroll-content></ion-infinite-scroll-content>
@@ -1480,8 +1517,8 @@ const sendOffer = async (e: any) => {
             //console.log(formData.value);
 
             // Başarılı işlem mesajı
-           
-           // $toast.success('Takas Teklifi İletildi', { position: 'top' });
+
+            // $toast.success('Takas Teklifi İletildi', { position: 'top' });
 
             // Mesaj detaylarını güncelle
             await fetchMessageDetails();
@@ -1808,7 +1845,7 @@ const fetchMessageDetails = async () => {
             //console.log("Update Sonuçları:", updateResults);
 
             // Mesaj listesi alındıktan sonra bu fonksiyonu çağır
-           // await FetchMessageList();
+            // await FetchMessageList();
 
             //console.log("Mesaj listesi başarıyla alındı.");
         } catch (error) {
@@ -1867,13 +1904,13 @@ productApi.getOwnerProducts(userInfo.value._to).then(res => {
 }).then(res => {
 
     // console.log('object :>> ', res)
-    console.log("teestr",chatMessageList.value)
+    console.log("teestr", chatMessageList.value)
     //const owner = res.data.data[0].owner;
     userInfo.value.targetName = chatMessageList.value[0].offer_detail.meName
 
 
 }).catch(error => {
-   // console.error('Error fetching owner products:', error);
+    // console.error('Error fetching owner products:', error);
 });
 let item = []
 item.push(userInfo.value)
@@ -1984,7 +2021,7 @@ watch(() => route.params.code, (params) => {
     }).then(res => {
 
         console.log('object :>> ', res)
-        console.log("ttst",chatMessageList.value)
+        console.log("ttst", chatMessageList.value)
         //const owner = res.data.data[0].owne0,r;
         userInfo.value.targetName = chatMessageList.value[0].offer_detail.meOwnerInfo.name
 
@@ -1999,19 +2036,6 @@ watch(() => route.params.code, (params) => {
 
 
 onMounted(() => {
-    // console.log("route codu", route.params.code)
-    // FetchMessageList().then(() => {
-    //     console.log("Mesaj listesi başarıyla alındı.");
-    // }).catch(error => {
-    //     console.error("Mesaj listesi alınırken hata oluştu:", error);
-    // });
-    // setInterval(() => {
-    //     FetchMessageList().then(() => {
-    //         console.log("Mesaj listesi başarıyla alındı.");
-    //     }).catch(error => {
-    //         console.error("Mesaj listesi alınırken hata oluştu:", error);
-    //     });
-    // }, 1500)
 
     setTimeout(() => {
         const contentRoot = document.getElementById('grid');
@@ -2028,15 +2052,6 @@ onMounted(() => {
 
     socket.emit('get_messages', { messageCode: route.params.code, page: 1 });
 
-    // socket.on('messages', (data) => {
-    //     console.log(data)
-    //     chatMessageList.value = data.reverse()
-    // })
-
-    // socket.on('new_message', (messages) => {
-    //     chatMessageList.value = messages.reverse()
-    //     console.log(messages)
-    // });
 
     socket.on('messages', (messages) => {
         // Sadece belirli bir messageCode'a sahip olan mesajları filtrele
@@ -2071,8 +2086,8 @@ onMounted(() => {
             }
 
             console.log(filteredMessages);
-           
-           
+
+
         } else {
             console.error("newMessage is not an array:", newMessage);
         }
@@ -2092,6 +2107,9 @@ onMounted(() => {
     page.value = 1
 
 });
+
+
+
 </script>
 
 
@@ -2149,6 +2167,7 @@ ion-modal#product-detail-modal-alert {
         }
     }
 }
+
 .item-scroll {
     /* Bu sınıfın yüksekliğini ihtiyaca göre ayarlayın */
 }
@@ -2162,7 +2181,7 @@ ion-modal#product-detail-modal-alert {
 
 .item-container {
     text-align: center;
-    background-color: gainsboro;
+    /* background-color: gainsboro; */
     border-radius: 1vh;
     width: 100;
     margin-bottom: 10px;

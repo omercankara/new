@@ -158,11 +158,11 @@
                     <span v-else>{{ productDetail?.city.name }} / {{ productDetail?.district.name }}</span>
                 </div>
                 <div class="product-detail-list-item">
-                    <span>İletişim</span>
+                    <span v-if="productDetail?.communication_preference !='message'" >İletişim</span>
                     <span v-if="productDetailLoading">
                         <ion-skeleton-text class="width-150 height-20 no-margin" :animated="true" />
                     </span>
-                    <a style="text-decoration: none;" :href="`tel:${formattedPhone}`">{{ formattedPhone }}</a>
+                    <a v-if="productDetail?.communication_preference !='message'"   style="text-decoration: none;" :href="`tel:${formattedPhone}`">{{ formattedPhone }}</a>
 
                 </div>
                 <div class="product-detail-list-item">
@@ -452,7 +452,6 @@
         <ion-modal id="product-detail-modal-notif" ref="notification" :is-open="isNotificationOpen"
             @did-dismiss="onFirstModalDismiss">
             <div class="wrapper">
-
 
                 <!-- <div class="modal-close-button ion-activatable ripple-parent">
                             <ion-icon color="primary" @click="closeFirstModal" :icon="closeOutline" size="large" />

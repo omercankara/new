@@ -124,7 +124,6 @@ let searchQuery = ref<string>('');
 
 onMounted(() => {
     // route.params.code değerini string olarak tanımlama
-
     interface User {
     user_code: string; // 'user_code' özelliği olmalı
     // Diğer kullanıcı verileri burada olabilir...
@@ -132,8 +131,6 @@ onMounted(() => {
 let item: string = String(route.params.code);
 
 productApi.getOwnerProducts(item).then(res => {
-   
-
     userInfo.seller_code = res.data.data[0].owner.user_code
     console.log("owner",userInfo.seller_code)
     console.log(userInfo)
@@ -189,13 +186,7 @@ productApi.getOwnerProducts(item).then(res => {
 });
 
 
-
-
-
-
 });
-
-
 
 const filteredProducts = computed(() => {
     const query = searchQuery.value.toLowerCase();
@@ -242,8 +233,6 @@ const mountImages = (event: Event) => {
                 formImagesData.append('images[]', base64Image);
             };
         }
-
-        ;
         productApi.productImageCreate(formImagesData)
             .then((response: { data: { files: any; }; }) => {
                 try {
@@ -256,15 +245,12 @@ const mountImages = (event: Event) => {
                     })
 
                     $toast.success("Profil resmi yüklendi", { position: "top-right" });
-
-
                 } catch (error) {
                     $toast.error("Bu Dosya Türü Desteklenmemektedir.", {
                         position: "top-right",
                     });
                     alert("bu dosya türü desteklenmiyor")
                     console.error('Veri işleme sırasında bir hata oluştu:', error);
-
                 }
             })
             .catch((error: { response: { status: number; }; }) => {
@@ -277,8 +263,6 @@ const mountImages = (event: Event) => {
                     });
                     console.error('Yükleme işlemi sırasında bir hata oluştu:', error);
                 }
-
-
             });
     }
 };
